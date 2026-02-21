@@ -1,0 +1,18 @@
+{
+  "mcpServers": {
+    "montra": {
+      "command": "npx",
+      "args": ["tsx", "src/index.ts"],
+      "cwd": "/path/to/montra-mcp-server",
+      "env": {
+        "SUPABASE_URL": "your-supabase-url",
+        "SUPABASE_SERVICE_ROLE_KEY": "your-service-role-key",
+        "BASE_RPC_URL": "https://mainnet.base.org",
+        "BURN_TOKEN_ADDRESS": "0x...",
+        "COINGLASS_KEY": "your-coinglass-key",
+        "WHALE_ALERT_KEY": "your-whale-alert-key",
+        "HELSINKI_BASE": "https://api.helsinkivm.com"
+      }
+    }
+  }
+}
