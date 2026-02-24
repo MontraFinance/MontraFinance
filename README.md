@@ -1,40 +1,58 @@
-<p align="center">
-  <h1 align="center">MONTRA MCP SERVER</h1>
-  <p align="center"><strong>Open Source AI Trading Intelligence for Claude</strong></p>
-  <p align="center">30 Tools &bull; 5 Resources &bull; 6 Workflow Prompts &bull; Built on Base Chain</p>
-</p>
+<div align="center">
 
-<p align="center">
-  <a href="#quick-start">Quick Start</a> &bull;
-  <a href="#tools">Tools</a> &bull;
-  <a href="#resources">Resources</a> &bull;
-  <a href="#prompts">Prompts</a> &bull;
-  <a href="TOOLS.md">Full Reference</a> &bull;
-  <a href="quickstart.md">Setup Guide</a>
-</p>
+# MONTRA MCP SERVER
+
+**Open Source AI Trading Intelligence for Claude**
+
+[![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
+[![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
+[![MCP](https://img.shields.io/badge/MCP-Compatible-8B5CF6?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://modelcontextprotocol.io/)
+[![Base Chain](https://img.shields.io/badge/Base-Chain-0052FF?logo=coinbase&logoColor=white)](https://base.org)
+[![Tools](https://img.shields.io/badge/Tools-30-green)](TOOLS.md)
+[![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
+
+```
+ ███╗   ███╗ ██████╗ ███╗   ██╗████████╗██████╗  █████╗
+ ████╗ ████║██╔═══██╗████╗  ██║╚══██╔══╝██╔══██╗██╔══██╗
+ ██╔████╔██║██║   ██║██╔██╗ ██║   ██║   ██████╔╝███████║
+ ██║╚██╔╝██║██║   ██║██║╚██╗██║   ██║   ██╔══██╗██╔══██║
+ ██║ ╚═╝ ██║╚██████╔╝██║ ╚████║   ██║   ██║  ██║██║  ██║
+ ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
+              MCP SERVER  ·  v1.1.0
+```
+
+**30 Tools** · **5 Resources** · **6 Workflow Prompts** · **Built on Base Chain**
+
+[Quick Start](#-quick-start) · [Tools](#-tools-30) · [Architecture](#-architecture) · [Strategies](#-strategies) · [Full Reference](TOOLS.md) · [Setup Guide](quickstart.md)
+
+</div>
 
 ---
 
-> **OPEN SOURCE PROJECT** — Montra Finance's MCP server is fully open source. Connect Claude directly to institutional-grade trading infrastructure on Base chain.
+> **100% OPEN SOURCE** — Montra Finance's MCP server is fully open source under the MIT license. Connect Claude directly to institutional-grade DeFi trading infrastructure on Base chain. No API keys required for core functionality.
 
 ---
 
-## What is Montra MCP?
+## Why Montra MCP?
 
-Montra MCP is a **Model Context Protocol server** that gives Claude direct access to the Montra Finance trading platform. Deploy autonomous trading agents, scan portfolios, analyze market data, estimate burns, and manage positions — all through natural conversation with Claude.
+| | Feature | Description |
+|---|---------|-------------|
+| **30** | Specialized Tools | Trading, analytics, portfolio, burn, XMTP messaging, and more |
+| **6** | Trading Strategies | Backtested autonomous strategies with proven performance |
+| **5** | MCP Resources | Static reference datasets Claude can read on demand |
+| **6** | Workflow Prompts | Pre-built multi-step operations for common tasks |
+| **0** | Lock-in | MIT licensed, no vendor lock-in, bring your own data sources |
 
-| Feature | Details |
-|---------|---------|
-| **Protocol** | MCP (stdio transport) |
-| **Tools** | 30 specialized trading, analytics & messaging tools |
-| **Resources** | 5 static reference datasets |
-| **Prompts** | 6 guided multi-step workflows |
-| **Chain** | Base (Ethereum L2) |
-| **Token** | $MONTRA (deflationary burn-to-query) |
-| **Strategies** | 6 autonomous trading strategies |
-| **Tier System** | Diamond / Gold / Silver / Bronze / Unranked |
-| **AI Integration** | Purpose-built for Anthropic Claude |
-| **License** | MIT |
+### What Can You Do?
+
+- Deploy autonomous trading agents with custom strategies, budgets, and risk parameters
+- Scan on-chain portfolios with real-time token prices and allocation analysis
+- Run Monte Carlo backtests on trading strategies with custom parameters
+- Monitor whale movements and large $MONTRA transfers in real-time
+- Send encrypted wallet-to-wallet messages via XMTP
+- Analyze market data from Coinglass, DexScreener, Helsinki VM, and Whale Alert
+- Track burn-to-query costs with complexity-based pricing estimation
+- Export P&L reports, trade journals, and correlation matrices
 
 ---
 
@@ -56,7 +74,7 @@ Add to your `claude_desktop_config.json`:
     "montra": {
       "command": "npx",
       "args": ["tsx", "src/index.ts"],
-      "cwd": "/path/to/montra-mcp-server",
+      "cwd": "/path/to/MontraFinance",
       "env": {
         "SUPABASE_URL": "your-supabase-url",
         "SUPABASE_SERVICE_ROLE_KEY": "your-key",
@@ -70,8 +88,8 @@ Add to your `claude_desktop_config.json`:
 ### Option 3: Direct
 
 ```bash
-git clone https://github.com/MontraFinance/montra-mcp-server.git
-cd montra-mcp-server
+git clone https://github.com/MontraFinance/MontraFinance.git
+cd MontraFinance
 npm install
 npx tsx src/index.ts
 ```
@@ -83,25 +101,33 @@ The server communicates over **stdin/stdout** using the MCP stdio transport. Any
 ## Architecture
 
 ```
-┌─────────────────────────┐
-│      Claude (AI)        │
-│   Natural Conversation  │
-└────────────┬────────────┘
-             │ MCP Protocol (stdio)
-┌────────────▼────────────┐
-│    MONTRA MCP SERVER    │
-│                         │
-│  30 Tools (Zod schemas) │
-│  5 Resources (static)   │
-│  6 Prompts (workflows)  │
-└──┬──────┬──────┬────────┘
-   │      │      │
-   ▼      ▼      ▼
-Supabase  Base   External APIs
-  (DB)   (RPC)   ├── DexScreener
-                  ├── Coinglass
-                  ├── Helsinki VM
-                  └── Whale Alert
+                    ┌─────────────────────────┐
+                    │      Claude (AI)        │
+                    │   Natural Conversation  │
+                    └────────────┬────────────┘
+                                 │ MCP Protocol (stdio)
+                    ┌────────────▼────────────┐
+                    │    MONTRA MCP SERVER    │
+                    │                         │
+                    │  ┌───────────────────┐  │
+                    │  │  30 Tools (Zod)   │  │
+                    │  │  5 Resources      │  │
+                    │  │  6 Prompts        │  │
+                    │  └───────────────────┘  │
+                    └──┬──────┬──────┬────────┘
+                       │      │      │
+              ┌────────┘      │      └────────┐
+              ▼               ▼               ▼
+         ┌─────────┐   ┌──────────┐   ┌──────────────┐
+         │Supabase │   │  Base    │   │External APIs │
+         │  (DB)   │   │  (RPC)  │   │              │
+         └─────────┘   └──────────┘   │ DexScreener  │
+                                      │ Coinglass    │
+                                      │ Helsinki VM  │
+                                      │ Whale Alert  │
+                                      │ XMTP         │
+                                      │ Neynar       │
+                                      └──────────────┘
 ```
 
 **Data Flow:**
@@ -114,7 +140,7 @@ Supabase  Base   External APIs
 
 ---
 
-## Tools
+## Tools (30)
 
 ### Trading (8 tools)
 
@@ -153,7 +179,7 @@ Supabase  Base   External APIs
 | `get_burn_estimate` | Estimate $MONTRA burn cost for an AI query based on complexity |
 | `get_burn_history` | Burn transaction history for a wallet from the ledger |
 | `get_burn_analytics` | 90-day aggregated burn stats — complexity breakdowns, daily trends |
-| `check_tier` | On-chain $MONTRA balance check and tier resolution (Diamond→Bronze) |
+| `check_tier` | On-chain $MONTRA balance check and tier resolution (Diamond to Bronze) |
 
 ### Market Data & Network (2 tools)
 
@@ -250,7 +276,7 @@ Hold $MONTRA tokens on Base to unlock higher tiers:
 
 ## Burn-to-Query Pricing
 
-Montra uses a deflationary burn model where $MONTRA tokens are burned for AI queries:
+Montra uses a deflationary burn model where $MONTRA tokens are permanently burned for AI queries:
 
 | Complexity | Multiplier | USD Cost | Examples |
 |-----------|-----------|---------|----------|
@@ -268,58 +294,87 @@ Montra uses a deflationary burn model where $MONTRA tokens are burned for AI que
 
 ## Example Conversations
 
-### Deploy a Trading Agent
+<details>
+<summary><strong>Deploy a Trading Agent</strong></summary>
 
 ```
 You: Deploy a momentum strategy agent with $500 USDC budget and 15% max drawdown
 
 Claude: I'll help you deploy that agent. Let me check a few things first.
 
-  → list_strategies: Showing Momentum Rider stats (58.2% win rate, 1.62 Sharpe)
-  → check_tier: You're Gold tier (12 max agents)
-  → list_agents: You have 4 active agents (8 slots remaining)
-  → launch_agent: Deploying with $500 USDC, 15% max drawdown, 25% max position
+  list_strategies  Showing Momentum Rider stats (58.2% win rate, 1.62 Sharpe)
+  check_tier       You're Gold tier (12 max agents)
+  list_agents      You have 4 active agents (8 slots remaining)
+  launch_agent     Deploying with $500 USDC, 15% max drawdown, 25% max position
 
-✅ Agent deployed! ID: agent-7f3a2b
+Agent deployed! ID: agent-7f3a2b
    Strategy: Momentum Rider | Budget: $500 USDC
    Max Drawdown: 15% | Status: Deploying
 ```
 
-### Portfolio Risk Assessment
+</details>
+
+<details>
+<summary><strong>Portfolio Risk Assessment</strong></summary>
 
 ```
 You: How risky is my portfolio right now?
 
 Claude: Let me run a comprehensive risk assessment.
 
-  → estimate_risk: Composite score 67/100 (ELEVATED)
-  → get_portfolio: $12,450 across 5 tokens
-  → compare_agents: 3 agents — best is Arb Seeker (+$340)
+  estimate_risk   Composite score 67/100 (ELEVATED)
+  get_portfolio   $12,450 across 5 tokens
+  compare_agents  3 agents — best is Arb Seeker (+$340)
 
-⚠️ Risk Score: 67/100 (Elevated)
+Risk Score: 67/100 (Elevated)
    - Strategy concentration: 60% momentum (high)
    - Agent "Grid-01" has -$89 unrealized loss
    - Recommendation: Diversify into mean reversion or DCA
 ```
 
-### Token Research
+</details>
+
+<details>
+<summary><strong>Token Research</strong></summary>
 
 ```
 You: Research DEGEN before I trade it
 
 Claude: Let me pull the data on DEGEN.
 
-  → search_tokens: Found DEGEN on Base (0x4ed4...)
-  → get_token_price: $0.0089 (+12.3% 24h)
-  → get_liquidity: $2.4M total liquidity across 6 DEX pairs
+  search_tokens    Found DEGEN on Base (0x4ed4...)
+  get_token_price  $0.0089 (+12.3% 24h)
+  get_liquidity    $2.4M total liquidity across 6 DEX pairs
 
-📊 DEGEN Token Report:
+DEGEN Token Report:
    Price: $0.0089 | 24h: +12.3%
    Liquidity: $2.4M (Moderate)
    Price Impact: ~0.5% for $1K trade, ~4.8% for $10K
    Top DEX: Uniswap V3 ($1.8M)
-   ⚠️ Caution: Thin liquidity above $5K trade size
+   Caution: Thin liquidity above $5K trade size
 ```
+
+</details>
+
+<details>
+<summary><strong>Whale Tracking</strong></summary>
+
+```
+You: Are there any whale movements on MONTRA?
+
+Claude: Let me check for large transfers.
+
+  get_whale_transfers  Scanning last 24h for transfers > 10M MONTRA
+
+Whale Activity Report:
+   3 large transfers detected in last 24h
+   - 500M MONTRA moved to burn address (deflationary burn)
+   - 250M MONTRA accumulated by 0x8f2a... (new whale)
+   - 100M MONTRA transferred between two known wallets
+   Net flow: -500M (bullish — supply reduction)
+```
+
+</details>
 
 ---
 
@@ -336,6 +391,8 @@ Claude: Let me pull the data on DEGEN.
 | `HELSINKI_BASE` | No | Helsinki VM base URL for quant signals |
 | `XMTP_BOT_PRIVATE_KEY` | No | Private key for XMTP bot wallet (enables messaging tools) |
 | `XMTP_ENV` | No | XMTP network: `production` or `dev` (default: `production`) |
+
+See [.env.example](.env.example) for a complete template.
 
 ---
 
@@ -354,60 +411,36 @@ Claude: Let me pull the data on DEGEN.
 | Whale Tracking | Whale Alert API |
 | Social | Neynar (Farcaster) |
 | Messaging | XMTP (wallet-to-wallet encrypted) |
-| Deployment | Vercel Serverless |
 
 ---
 
 ## Project Structure
 
 ```
-montra-mcp-server/
+MontraFinance/
 ├── src/
 │   ├── index.ts              # Server entry — registers all tools, resources, prompts
 │   ├── prompts.ts            # 6 workflow prompt templates
 │   ├── resources.ts          # 5 static MCP resources
 │   ├── lib/
-│   │   ├── supabase.ts       # Supabase client
-│   │   ├── rpc.ts            # Base chain RPC helpers
+│   │   ├── supabase.ts       # Supabase client singleton
+│   │   ├── rpc.ts            # Base chain JSON-RPC helpers
 │   │   ├── prices.ts         # DexScreener price fetcher
-│   │   ├── tokens.ts         # Curated Base token list
+│   │   ├── tokens.ts         # Curated Base chain token list
 │   │   └── strategies.ts     # Strategy definitions & backtest stats
-│   └── tools/
-│       ├── list-strategies.ts
-│       ├── list-agents.ts
-│       ├── launch-agent.ts
-│       ├── manage-agent.ts
-│       ├── clone-agent.ts
-│       ├── get-portfolio.ts
-│       ├── recompose-portfolio.ts
-│       ├── get-agent-performance.ts
-│       ├── compare-agents.ts
-│       ├── export-pnl.ts
-│       ├── get-token-price.ts
-│       ├── search-tokens.ts
-│       ├── get-liquidity.ts
-│       ├── get-burn-estimate.ts
-│       ├── get-burn-history.ts
-│       ├── get-burn-analytics.ts
-│       ├── check-tier.ts
-│       ├── get-market-data.ts
-│       ├── get-gas-status.ts
-│       ├── get-dashboard.ts
-│       ├── estimate-risk.ts
-│       ├── get-farcaster-activity.ts
-│       ├── send-xmtp-message.ts
-│       ├── get-xmtp-conversations.ts
-│       ├── manage-alerts.ts
-│       ├── get-alert-subscriptions.ts
-│       ├── backtest-strategy.ts
-│       ├── get-correlation-matrix.ts
-│       ├── get-whale-transfers.ts
-│       └── get-trade-journal.ts
+│   └── tools/                # 30 tool implementations
+│       ├── list-strategies.ts ... get-trade-journal.ts
+├── .github/                  # Issue templates, PR template, funding
 ├── package.json
 ├── tsconfig.json
-├── mcp-config.json           # Copy-paste Claude config
+├── mcp-config.json           # Copy-paste Claude Desktop config
+├── .env.example              # Environment variable template
 ├── quickstart.md             # 60-second setup guide
 ├── TOOLS.md                  # Complete tool reference
+├── CONTRIBUTING.md           # How to contribute
+├── SECURITY.md               # Security policy
+├── CODE_OF_CONDUCT.md        # Community guidelines
+├── CHANGELOG.md              # Version history
 ├── LICENSE                   # MIT
 └── README.md                 # This file
 ```
@@ -416,19 +449,22 @@ montra-mcp-server/
 
 ## Contributing
 
-We welcome contributions! Areas where help is needed:
+We welcome contributions! See [CONTRIBUTING.md](CONTRIBUTING.md) for detailed guidelines.
+
+**Areas where help is needed:**
 
 - **New tools** — Add market data sources, analytics, or chain integrations
+- **Multi-chain** — Extend support beyond Base to Arbitrum, Optimism, etc.
 - **Documentation** — Examples, workflow guides, and prompt templates
-- **Bug reports** — File issues with reproduction steps
 - **Testing** — Unit tests for tool handlers
+- **Bug reports** — File issues with reproduction steps
 
 ### Development
 
 ```bash
 # Clone
-git clone https://github.com/MontraFinance/montra-mcp-server.git
-cd montra-mcp-server
+git clone https://github.com/MontraFinance/MontraFinance.git
+cd MontraFinance
 
 # Install
 npm install
@@ -444,22 +480,30 @@ npx tsc --noEmit
 
 ## Links
 
-- **Website:** [montrafinance.com](https://www.montrafinance.com)
-- **Developer Docs:** [montrafinance.com/docs](https://www.montrafinance.com/docs)
-- **Twitter/X:** [@MontraFinance](https://x.com/MontraFinance)
-- **Farcaster:** [@montrafinance](https://warpcast.com/montrafinance)
-- **Telegram:** [Montra_Finance](https://t.me/Montra_Finance)
-- **GitHub:** [MontraFinance](https://github.com/MontraFinance)
+| | Link |
+|---|---|
+| Website | [montrafinance.com](https://www.montrafinance.com) |
+| Developer Docs | [montrafinance.com/docs](https://www.montrafinance.com/docs) |
+| Twitter/X | [@MontraFinance](https://x.com/MontraFinance) |
+| Farcaster | [@montrafinance](https://warpcast.com/montrafinance) |
+| Telegram | [Montra_Finance](https://t.me/Montra_Finance) |
+| GitHub | [MontraFinance](https://github.com/MontraFinance) |
 
 ---
 
 ## License
 
-MIT License - see [LICENSE](LICENSE) for details.
+MIT License — see [LICENSE](LICENSE) for details.
 
 ---
 
-<p align="center">
-  <strong>Montra Finance — Institutional AI Trading Intelligence, Built on Base</strong><br/>
-  <sub>30 tools &bull; 5 resources &bull; 6 prompts &bull; Powered by Claude</sub>
-</p>
+<div align="center">
+
+**Montra Finance — Institutional AI Trading Intelligence, Built on Base**
+
+30 tools · 5 resources · 6 prompts · Powered by Claude
+
+[![Twitter Follow](https://img.shields.io/twitter/follow/MontraFinance?style=social)](https://x.com/MontraFinance)
+[![GitHub stars](https://img.shields.io/github/stars/MontraFinance/MontraFinance?style=social)](https://github.com/MontraFinance/MontraFinance)
+
+</div>
