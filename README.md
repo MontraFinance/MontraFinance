@@ -8,7 +8,7 @@
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.x-3178C6?logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![MCP](https://img.shields.io/badge/MCP-Compatible-8B5CF6?logo=data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iMjQiIGhlaWdodD0iMjQiIHZpZXdCb3g9IjAgMCAyNCAyNCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj48Y2lyY2xlIGN4PSIxMiIgY3k9IjEyIiByPSIxMCIgZmlsbD0id2hpdGUiLz48L3N2Zz4=)](https://modelcontextprotocol.io/)
 [![Base Chain](https://img.shields.io/badge/Base-Chain-0052FF?logo=coinbase&logoColor=white)](https://base.org)
-[![Tools](https://img.shields.io/badge/Tools-30-green)](TOOLS.md)
+[![Tools](https://img.shields.io/badge/Tools-43-green)](TOOLS.md)
 [![Node.js](https://img.shields.io/badge/Node.js-20+-339933?logo=node.js&logoColor=white)](https://nodejs.org/)
 
 ```
@@ -18,12 +18,12 @@
  ██║╚██╔╝██║██║   ██║██║╚██╗██║   ██║   ██╔══██╗██╔══██║
  ██║ ╚═╝ ██║╚██████╔╝██║ ╚████║   ██║   ██║  ██║██║  ██║
  ╚═╝     ╚═╝ ╚═════╝ ╚═╝  ╚═══╝   ╚═╝   ╚═╝  ╚═╝╚═╝  ╚═╝
-              MCP SERVER  ·  v1.1.0
+              MCP SERVER  ·  v1.2.0
 ```
 
-**30 Tools** · **5 Resources** · **6 Workflow Prompts** · **Built on Base Chain**
+**43 Tools** · **5 Resources** · **6 Workflow Prompts** · **Built on Base Chain**
 
-[Quick Start](#-quick-start) · [Tools](#-tools-30) · [Architecture](#-architecture) · [Strategies](#-strategies) · [Full Reference](TOOLS.md) · [Setup Guide](quickstart.md)
+[Quick Start](#-quick-start) · [Tools](#-tools-43) · [Architecture](#-architecture) · [Strategies](#-strategies) · [Full Reference](TOOLS.md) · [Setup Guide](quickstart.md)
 
 </div>
 
@@ -37,7 +37,7 @@
 
 | | Feature | Description |
 |---|---------|-------------|
-| **30** | Specialized Tools | Trading, analytics, portfolio, burn, XMTP messaging, and more |
+| **43** | Specialized Tools | Trading, analytics, portfolio, burn, XMTP, GPU, social, and more |
 | **6** | Trading Strategies | Backtested autonomous strategies with proven performance |
 | **5** | MCP Resources | Static reference datasets Claude can read on demand |
 | **6** | Workflow Prompts | Pre-built multi-step operations for common tasks |
@@ -53,6 +53,11 @@
 - Analyze market data from Coinglass, DexScreener, Helsinki VM, and Whale Alert
 - Track burn-to-query costs with complexity-based pricing estimation
 - Export P&L reports, trade journals, and correlation matrices
+- Simulate trades with slippage and fee estimation before executing
+- Track agent leaderboards ranked by P&L, Sharpe ratio, or win rate
+- Aggregate sentiment from Farcaster social data and on-chain patterns
+- Manage GPU clusters on Vast.ai — search, rent, monitor, and destroy instances
+- Optimize strategy parameters with automated sweeps across drawdown and position sizes
 
 ---
 
@@ -110,7 +115,7 @@ The server communicates over **stdin/stdout** using the MCP stdio transport. Any
                     │    MONTRA MCP SERVER    │
                     │                         │
                     │  ┌───────────────────┐  │
-                    │  │  30 Tools (Zod)   │  │
+                    │  │  43 Tools (Zod)   │  │
                     │  │  5 Resources      │  │
                     │  │  6 Prompts        │  │
                     │  └───────────────────┘  │
@@ -127,6 +132,7 @@ The server communicates over **stdin/stdout** using the MCP stdio transport. Any
                                       │ Whale Alert  │
                                       │ XMTP         │
                                       │ Neynar       │
+                                      │ Vast.ai      │
                                       └──────────────┘
 ```
 
@@ -140,7 +146,7 @@ The server communicates over **stdin/stdout** using the MCP stdio transport. Any
 
 ---
 
-## Tools (30)
+## Tools (43)
 
 ### Trading (8 tools)
 
@@ -211,6 +217,39 @@ The server communicates over **stdin/stdout** using the MCP stdio transport. Any
 | `get_correlation_matrix` | Cross-token price correlation analysis on Base chain (2-8 tokens) |
 | `get_whale_transfers` | Detect large $MONTRA transfers — whale movements, burns, accumulation |
 | `get_trade_journal` | Formatted trade journal with streaks, best/worst days, and pattern insights |
+
+### Social & Sentiment (3 tools)
+
+| Tool | Description |
+|------|-------------|
+| `get_sentiment` | Aggregate sentiment analysis — Farcaster social data, burn trends, agent patterns |
+| `post_to_farcaster` | Broadcast messages to Farcaster from the Montra account via Neynar API |
+| `get_funding_rates` | Perpetual futures funding rates from Coinglass — identifies crowded trades |
+
+### Trading Simulation (3 tools)
+
+| Tool | Description |
+|------|-------------|
+| `simulate_trade` | Simulate a trade at current prices — entry, fees, slippage, projected P&L |
+| `get_agent_leaderboard` | Global agent leaderboard — rank by P&L, win rate, trades, or Sharpe ratio |
+| `optimize_strategy_params` | Parameter sweep optimization — find optimal drawdown and position sizes |
+
+### Watchlist & History (2 tools)
+
+| Tool | Description |
+|------|-------------|
+| `manage_watchlist` | Create and manage a token watchlist — add, remove, view with live prices |
+| `get_portfolio_history` | Track portfolio value over time — growth trends, benchmarks, best/worst periods |
+
+### GPU Cluster (5 tools)
+
+| Tool | Description |
+|------|-------------|
+| `search_gpu_offers` | Search Vast.ai marketplace for GPU offers by model, count, RAM, and price |
+| `rent_gpu_instance` | Rent a GPU instance on Vast.ai with custom Docker image and startup commands |
+| `get_gpu_instances` | List all running Vast.ai GPU instances — status, utilization, cost |
+| `get_gpu_status` | Real-time GPU instance status — utilization, temperature, memory, SSH info |
+| `destroy_gpu_instance` | Terminate and destroy a running Vast.ai GPU instance |
 
 > See **[TOOLS.md](TOOLS.md)** for the complete reference with parameters and example responses.
 
@@ -391,6 +430,9 @@ Whale Activity Report:
 | `HELSINKI_BASE` | No | Helsinki VM base URL for quant signals |
 | `XMTP_BOT_PRIVATE_KEY` | No | Private key for XMTP bot wallet (enables messaging tools) |
 | `XMTP_ENV` | No | XMTP network: `production` or `dev` (default: `production`) |
+| `VAST_API_KEY` | No | Vast.ai API key for GPU cluster management |
+| `NEYNAR_API_KEY` | No | Neynar API key for Farcaster posting |
+| `FARCASTER_SIGNER_UUID` | No | Farcaster signer UUID for autonomous posts |
 
 See [.env.example](.env.example) for a complete template.
 
@@ -411,6 +453,7 @@ See [.env.example](.env.example) for a complete template.
 | Whale Tracking | Whale Alert API |
 | Social | Neynar (Farcaster) |
 | Messaging | XMTP (wallet-to-wallet encrypted) |
+| GPU | Vast.ai (cloud GPU marketplace) |
 
 ---
 
@@ -428,7 +471,7 @@ MontraFinance/
 │   │   ├── prices.ts         # DexScreener price fetcher
 │   │   ├── tokens.ts         # Curated Base chain token list
 │   │   └── strategies.ts     # Strategy definitions & backtest stats
-│   └── tools/                # 30 tool implementations
+│   └── tools/                # 43 tool implementations
 │       ├── list-strategies.ts ... get-trade-journal.ts
 ├── .github/                  # Issue templates, PR template, funding
 ├── package.json
@@ -501,7 +544,7 @@ MIT License — see [LICENSE](LICENSE) for details.
 
 **Montra Finance — Institutional AI Trading Intelligence, Built on Base**
 
-30 tools · 5 resources · 6 prompts · Powered by Claude
+43 tools · 5 resources · 6 prompts · Powered by Claude
 
 [![Twitter Follow](https://img.shields.io/twitter/follow/MontraFinance?style=social)](https://x.com/MontraFinance)
 [![GitHub stars](https://img.shields.io/github/stars/MontraFinance/MontraFinance?style=social)](https://github.com/MontraFinance/MontraFinance)

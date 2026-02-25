@@ -46,6 +46,27 @@ import { registerGetCorrelationMatrix } from "./tools/get-correlation-matrix.js"
 import { registerGetWhaleTransfers } from "./tools/get-whale-transfers.js";
 import { registerGetTradeJournal } from "./tools/get-trade-journal.js";
 
+// Social & sentiment tools
+import { registerPostToFarcaster } from "./tools/post-to-farcaster.js";
+import { registerGetSentiment } from "./tools/get-sentiment.js";
+
+// Trading simulation & intelligence tools
+import { registerSimulateTrade } from "./tools/simulate-trade.js";
+import { registerGetFundingRates } from "./tools/get-funding-rates.js";
+import { registerOptimizeStrategyParams } from "./tools/optimize-strategy-params.js";
+
+// Platform intelligence tools
+import { registerGetAgentLeaderboard } from "./tools/get-agent-leaderboard.js";
+import { registerManageWatchlist } from "./tools/manage-watchlist.js";
+import { registerGetPortfolioHistory } from "./tools/get-portfolio-history.js";
+
+// GPU cluster tools (Vast.ai)
+import { registerSearchGpuOffers } from "./tools/search-gpu-offers.js";
+import { registerRentGpuInstance } from "./tools/rent-gpu-instance.js";
+import { registerGetGpuInstances } from "./tools/get-gpu-instances.js";
+import { registerGetGpuStatus } from "./tools/get-gpu-status.js";
+import { registerDestroyGpuInstance } from "./tools/destroy-gpu-instance.js";
+
 // Resources & prompts
 import { registerResources } from "./resources.js";
 import { registerPrompts } from "./prompts.js";
@@ -109,6 +130,23 @@ const TOOL_MANIFEST = [
   { name: "get_correlation_matrix",  group: "Analytics" },
   { name: "get_whale_transfers",     group: "Analytics" },
   { name: "get_trade_journal",       group: "Analytics" },
+  // Social & Sentiment
+  { name: "post_to_farcaster",       group: "Social" },
+  { name: "get_sentiment",           group: "Sentiment" },
+  // Trading Intelligence
+  { name: "simulate_trade",          group: "Trading" },
+  { name: "get_funding_rates",       group: "Market Data" },
+  { name: "optimize_strategy_params",group: "Analytics" },
+  // Platform Intelligence
+  { name: "get_agent_leaderboard",   group: "Trading" },
+  { name: "manage_watchlist",        group: "Portfolio" },
+  { name: "get_portfolio_history",   group: "Portfolio" },
+  // GPU Cluster (Vast.ai)
+  { name: "search_gpu_offers",       group: "GPU" },
+  { name: "rent_gpu_instance",       group: "GPU" },
+  { name: "get_gpu_instances",       group: "GPU" },
+  { name: "get_gpu_status",          group: "GPU" },
+  { name: "destroy_gpu_instance",    group: "GPU" },
 ];
 
 const RESOURCE_MANIFEST = [
@@ -130,7 +168,7 @@ const PROMPT_MANIFEST = [
 
 function printStartup() {
   console.error(BANNER);
-  console.error("\x1b[33m  [BOOT]\x1b[0m Initializing Montra MCP Server v1.1.0...");
+  console.error("\x1b[33m  [BOOT]\x1b[0m Initializing Montra MCP Server v1.3.0...");
   console.error("\x1b[33m  [BOOT]\x1b[0m Loading environment configuration...");
 
   const envStatus = (key: string) => process.env[key] ? "\x1b[32m●\x1b[0m" : "\x1b[31m○\x1b[0m";
@@ -143,6 +181,9 @@ function printStartup() {
   console.error(`\x1b[33m  [ENV ]\x1b[0m  ${envStatus("HELSINKI_BASE")} HELSINKI_BASE`);
   console.error(`\x1b[33m  [ENV ]\x1b[0m  ${envStatus("XMTP_BOT_PRIVATE_KEY")} XMTP_BOT_PRIVATE_KEY`);
   console.error(`\x1b[33m  [ENV ]\x1b[0m  ${envStatus("XMTP_ENV")} XMTP_ENV`);
+  console.error(`\x1b[33m  [ENV ]\x1b[0m  ${envStatus("NEYNAR_API_KEY")} NEYNAR_API_KEY`);
+  console.error(`\x1b[33m  [ENV ]\x1b[0m  ${envStatus("FARCASTER_SIGNER_UUID")} FARCASTER_SIGNER_UUID`);
+  console.error(`\x1b[33m  [ENV ]\x1b[0m  ${envStatus("VAST_AI_API_KEY")} VAST_AI_API_KEY`);
 
   console.error("");
   console.error("\x1b[33m  [LOAD]\x1b[0m Registering tools...");
@@ -181,7 +222,7 @@ function printStartup() {
 
 const server = new McpServer({
   name: "montra-mcp",
-  version: "1.1.0",
+  version: "1.3.0",
 });
 
 // Register trading tools
@@ -229,6 +270,27 @@ registerBacktestStrategy(server);
 registerGetCorrelationMatrix(server);
 registerGetWhaleTransfers(server);
 registerGetTradeJournal(server);
+
+// Register social & sentiment tools
+registerPostToFarcaster(server);
+registerGetSentiment(server);
+
+// Register trading intelligence tools
+registerSimulateTrade(server);
+registerGetFundingRates(server);
+registerOptimizeStrategyParams(server);
+
+// Register platform intelligence tools
+registerGetAgentLeaderboard(server);
+registerManageWatchlist(server);
+registerGetPortfolioHistory(server);
+
+// Register GPU cluster tools
+registerSearchGpuOffers(server);
+registerRentGpuInstance(server);
+registerGetGpuInstances(server);
+registerGetGpuStatus(server);
+registerDestroyGpuInstance(server);
 
 // Register resources & prompts
 registerResources(server);

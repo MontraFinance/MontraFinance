@@ -1,6 +1,6 @@
 # MONTRA MCP — Complete Tool Reference
 
-> 30 Tools | 5 Resources | 6 Prompts — Full parameter specs, response schemas, and usage examples.
+> 43 Tools | 5 Resources | 6 Prompts — Full parameter specs, response schemas, and usage examples.
 
 ---
 
@@ -638,6 +638,168 @@ Generate a formatted trade journal from agent P&L history with pattern analysis.
 
 ---
 
+## Social & Sentiment Tools (3)
+
+### `get_sentiment`
+
+Aggregate sentiment analysis combining Farcaster social data, burn trends, and agent trading patterns.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `token` | string | No | Token symbol to analyze (default: `MONTRA`) |
+| `days` | number | No | Lookback period in days, 1-90 (default: 7) |
+
+---
+
+### `post_to_farcaster`
+
+Broadcast a message to Farcaster from the Montra account via Neynar API.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `text` | string | Yes | Cast text content (1-1024 characters) |
+| `eventType` | string | No | Event type: `market_update`, `agent_milestone`, `burn_event`, `custom` (default: `custom`) |
+| `eventKey` | string | No | Event key for deduplication |
+
+---
+
+### `get_funding_rates`
+
+Get current perpetual futures funding rates from Coinglass — shows market positioning and identifies crowded trades.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `symbol` | string | No | Asset symbol (e.g., `BTC`, `ETH`). Omit for top assets overview |
+| `limit` | number | No | Number of assets to return, 1-50 (default: 10) |
+
+---
+
+## Trading Simulation Tools (3)
+
+### `simulate_trade`
+
+Simulate a trade at current market prices without executing — shows entry, fees, slippage estimate, and projected P&L targets.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `tokenIn` | string | Yes | Token you're selling (symbol or address, e.g., `USDC`) |
+| `tokenOut` | string | Yes | Token you're buying (symbol or address, e.g., `ETH`) |
+| `amountIn` | number | Yes | Amount of tokenIn to spend |
+| `slippagePct` | number | No | Expected slippage percentage, 0-50 (default: 0.5) |
+
+---
+
+### `get_agent_leaderboard`
+
+Global agent leaderboard — ranks all trading agents across the platform by P&L, win rate, or trade count.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `rankBy` | string | No | Ranking metric: `pnl`, `win_rate`, `trades`, `sharpe` (default: `pnl`) |
+| `limit` | number | No | Top N agents to return, 1-50 (default: 10) |
+| `strategyFilter` | string | No | Filter by strategy type |
+| `statusFilter` | string | No | Filter by status: `active`, `paused`, `stopped`, `all` (default: `active`) |
+
+---
+
+### `optimize_strategy_params`
+
+Find optimal strategy parameters by running parameter sweeps across drawdown limits and position sizes.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `strategy` | string | Yes | Strategy ID to optimize |
+| `budget` | number | Yes | Budget to optimize for in USD (100-10M) |
+| `periods` | number | No | Months to simulate per sweep, 3-36 (default: 12) |
+| `optimizeFor` | string | No | Optimization target: `return`, `sharpe`, `safety` (default: `sharpe`) |
+
+---
+
+## Watchlist & History Tools (2)
+
+### `manage_watchlist`
+
+Create, view, and manage a token watchlist with live prices and change alerts.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `walletAddress` | string | Yes | Wallet address that owns the watchlist |
+| `action` | string | Yes | Action: `view`, `add`, `remove` |
+| `tokens` | string[] | No | Token symbols to add or remove (e.g., `["ETH", "DEGEN"]`) |
+
+---
+
+### `get_portfolio_history`
+
+Track portfolio value over time — shows snapshots, growth trends, benchmark comparisons, and best/worst periods.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `walletAddress` | string | Yes | Wallet address (0x format) |
+| `days` | number | No | Lookback period in days, 1-365 (default: 30) |
+
+---
+
+## GPU Cluster Tools (5)
+
+### `search_gpu_offers`
+
+Search Vast.ai GPU marketplace for available offers filtered by GPU model, count, RAM, and max price.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `gpu_name` | string | No | GPU model name (default: `RTX_5090`) |
+| `num_gpus` | number | No | Minimum number of GPUs, 1-8 (default: 4) |
+| `max_price` | number | No | Maximum price per hour in USD (default: 5.0) |
+| `min_ram` | number | No | Minimum GPU RAM in MB per GPU (default: 28000) |
+| `limit` | number | No | Maximum results, 1-50 (default: 10) |
+
+---
+
+### `rent_gpu_instance`
+
+Rent a GPU instance on Vast.ai by specifying an offer ID with optional Docker image, disk size, and startup commands.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `offer_id` | number | Yes | Offer ID from `search_gpu_offers` results |
+| `image` | string | No | Docker image (default: `pytorch/pytorch:2.5.1-cuda12.4-cudnn9-devel`) |
+| `disk_gb` | number | No | Disk space in GB, 10-500 (default: 80) |
+| `onstart_cmd` | string | No | Shell command to run on instance startup |
+
+---
+
+### `get_gpu_instances`
+
+List all your running Vast.ai GPU instances with status, SSH details, GPU utilization, cost, and uptime.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| — | — | — | No parameters required |
+
+---
+
+### `get_gpu_status`
+
+Get detailed real-time status of a specific Vast.ai GPU instance — utilization, temperature, memory, SSH info, and cost breakdown.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `instance_id` | number | Yes | Vast.ai instance ID |
+
+---
+
+### `destroy_gpu_instance`
+
+Terminate and destroy a running Vast.ai GPU instance.
+
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| `instance_id` | number | Yes | Vast.ai instance ID to destroy |
+| `confirm` | boolean | Yes | Must be `true` to confirm destruction |
+
+---
+
 ## Resources (5)
 
 | URI | Content |
@@ -678,4 +840,4 @@ Checks: token search → price lookup → liquidity depth → pair availability 
 
 ---
 
-<p align="center"><sub>Montra Finance — 30 tools, 5 resources, 6 prompts — Powered by Claude</sub></p>
+<p align="center"><sub>Montra Finance — 43 tools, 5 resources, 6 prompts — Powered by Claude</sub></p>
