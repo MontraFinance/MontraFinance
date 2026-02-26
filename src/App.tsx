@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { AgentProvider } from "@/contexts/AgentContext";
 import { TierProvider } from "@/contexts/TierContext";
+import { ThemeProvider } from "@/contexts/ThemeContext";
 import WalletModal from "@/components/WalletModal";
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
@@ -27,11 +28,13 @@ const SmartAccounts = lazy(() => import("./pages/SmartAccounts"));
 const TokensAnalytics = lazy(() => import("./pages/TokensAnalytics"));
 const RevenueTracker = lazy(() => import("./pages/RevenueTracker"));
 const DevShowcase = lazy(() => import("./pages/DevShowcase"));
+const TokenLaunchStudio = lazy(() => import("./pages/TokenLaunchStudio"));
 
 const queryClient = new QueryClient();
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
+    <ThemeProvider>
     <WalletProvider>
       <TierProvider>
       <AgentProvider>
@@ -58,6 +61,7 @@ const App = () => (
             <Route path="/tokens-analytics" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><TokensAnalytics /></Suspense>} />
             <Route path="/revenue" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><RevenueTracker /></Suspense>} />
             <Route path="/dev-showcase" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DevShowcase /></Suspense>} />
+            <Route path="/launch-studio" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><TokenLaunchStudio /></Suspense>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
@@ -66,6 +70,7 @@ const App = () => (
       </AgentProvider>
       </TierProvider>
     </WalletProvider>
+    </ThemeProvider>
   </QueryClientProvider>
 );
 
