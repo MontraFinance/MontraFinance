@@ -1,0 +1,52 @@
+{
+  "headers": [
+    {
+      "source": "/(.*)",
+      "headers": [
+        { "key": "Cross-Origin-Embedder-Policy", "value": "credentialless" },
+        { "key": "Cross-Origin-Opener-Policy", "value": "same-origin" }
+      ]
+    }
+  ],
+  "rewrites": [
+    { "source": "/((?!api/).*)", "destination": "/index.html" }
+  ],
+  "crons": [
+    {
+      "path": "/api/cron/farcaster-post",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/farcaster-sentiment",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/cow-order-monitor",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/xmtp/bot-listener",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/xmtp-alerts",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/agent-trader",
+      "schedule": "*/2 * * * *"
+    },
+    {
+      "path": "/api/cron/buyback-executor",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/sentiment-trader",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/fee-harvester",
+      "schedule": "0 */6 * * *"
+    }
+  ]
+}
