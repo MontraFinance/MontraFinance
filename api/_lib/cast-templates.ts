@@ -11,7 +11,7 @@ interface AgentInfo {
 
 interface BurnInfo {
   id: string;
-  amount: number;
+  amount_burned: number;
   wallet_address: string;
 }
 
@@ -61,7 +61,7 @@ export function castTradeMilestone(agent: AgentInfo, count: number): string {
 }
 
 export function castBurnConfirmed(burn: BurnInfo): string {
-  const amount = burn.amount.toLocaleString();
+  const amount = (burn.amount_burned || 0).toLocaleString();
   return truncate(
     `\ud83d\udd25 ${amount} $MONTRA burned on Base. Wallet ${burn.wallet_address.slice(0, 6)}...${burn.wallet_address.slice(-4)} just reduced the supply forever.`,
     320,
@@ -102,6 +102,13 @@ export function castTokenDeployed(token: TokenDeployInfo): string {
   const shortAddr = `${token.tokenAddress.slice(0, 6)}...${token.tokenAddress.slice(-4)}`;
   return truncate(
     `\ud83d\ude80 $${token.symbol} (${token.name}) just launched on Base via Montra Finance! Token: ${shortAddr}. Uniswap v4 pool live with MEV protection. LP fees fuel the $MONTRA buyback flywheel \ud83d\udd25`,
+    320,
+  );
+}
+
+export function castWeeklyDigest(totalReplies: number, uniqueAuthors: number): string {
+  return truncate(
+    `📊 Weekly recap: Montra Finance answered ${totalReplies} community questions from ${uniqueAuthors} unique users this week. Ask us anything about DeFi, trading, and autonomous agents on Base.`,
     320,
   );
 }

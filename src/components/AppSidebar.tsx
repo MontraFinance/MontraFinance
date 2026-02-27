@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BarChart3, Bot, Wallet, Activity, Signal, MessageSquare, History, Menu, X,
-  Building2, Shield, KeyRound, Coins, DollarSign, Code2,
+  Building2, Shield, KeyRound, Coins, DollarSign, Code2, Rocket,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -15,14 +15,15 @@ const NAV_ITEMS = [
   { icon: Building2, label: 'Institutional', to: '/institutional', disabled: false },
   { icon: Shield, label: 'Compliance', to: '/compliance', disabled: false },
   { icon: KeyRound, label: 'Smart Accounts', to: '/smart-accounts', disabled: false },
-  { icon: MessageSquare, label: 'Messages', to: '/messages', disabled: true },
+  { icon: MessageSquare, label: 'Messages', to: '/messages', disabled: false },
   { icon: Coins, label: 'Tokens Analytics', to: '/tokens-analytics', disabled: false },
   { icon: DollarSign, label: 'Revenue', to: '/revenue', disabled: false },
   { icon: Code2, label: 'Dev Showcase', to: '/dev-showcase', disabled: false },
-  { icon: History, label: 'Agent Orders', to: '/agents-history', disabled: true },
+  { icon: History, label: 'Agent Orders', to: '/agents-history', disabled: false },
+  { icon: Rocket, label: 'Launch Studio', to: '/launch-studio', disabled: false },
 ] as const;
 
-export type NavPage = 'dashboard' | 'agents' | 'portfolio' | 'transactions' | 'analytics' | 'institutional' | 'compliance' | 'smart-accounts' | 'messages' | 'tokens-analytics' | 'revenue' | 'dev-showcase' | 'agents-history';
+export type NavPage = 'dashboard' | 'agents' | 'portfolio' | 'transactions' | 'analytics' | 'institutional' | 'compliance' | 'smart-accounts' | 'messages' | 'tokens-analytics' | 'revenue' | 'dev-showcase' | 'agents-history' | 'launch-studio';
 
 const PAGE_TO_PATH: Record<NavPage, string> = {
   dashboard: '/dashboard',
@@ -38,9 +39,10 @@ const PAGE_TO_PATH: Record<NavPage, string> = {
   'revenue': '/revenue',
   'dev-showcase': '/dev-showcase',
   'agents-history': '/agents-history',
+  'launch-studio': '/launch-studio',
 };
 
-function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?: () => void }) {
+function NavLinks({ activePath, onNavigate, pingCount = 0 }: { activePath: string; onNavigate?: () => void; pingCount?: number }) {
   return (
     <>
       <span className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-3">
@@ -69,6 +71,11 @@ function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?:
           >
             <Icon size={14} />
             {label}
+            {label === 'Messages' && pingCount > 0 && (
+              <span className="ml-auto flex items-center justify-center min-w-[18px] h-[18px] text-[9px] font-mono font-bold bg-red-500 text-white rounded-full px-1">
+                {pingCount > 99 ? '99+' : pingCount}
+              </span>
+            )}
           </Link>
         )
       )}
@@ -76,7 +83,7 @@ function NavLinks({ activePath, onNavigate }: { activePath: string; onNavigate?:
   );
 }
 
-export function AppSidebar({ activePage }: { activePage: NavPage }) {
+export function AppSidebar({ activePage, pingCount = 0 }: { activePage: NavPage; pingCount?: number }) {
   const [open, setOpen] = useState(false);
   const activePath = PAGE_TO_PATH[activePage];
 
@@ -84,19 +91,24 @@ export function AppSidebar({ activePage }: { activePage: NavPage }) {
     <>
       {/* Desktop sidebar */}
       <aside className="hidden lg:flex flex-col w-48 border-r border-border p-4 min-h-[calc(100vh-49px)]">
-        <NavLinks activePath={activePath} />
+        <NavLinks activePath={activePath} pingCount={pingCount} />
       </aside>
 
       {/* Mobile menu button */}
       <div className="lg:hidden fixed bottom-4 left-4 z-50">
         <Sheet open={open} onOpenChange={setOpen}>
           <SheetTrigger asChild>
-            <button className="flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition">
+            <button className="relative flex items-center justify-center w-12 h-12 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition">
               {open ? <X size={20} /> : <Menu size={20} />}
+              {pingCount > 0 && (
+                <span className="absolute -top-1 -right-1 flex items-center justify-center min-w-[16px] h-[16px] text-[8px] font-bold bg-red-500 text-white rounded-full px-0.5">
+                  {pingCount > 99 ? '99+' : pingCount}
+                </span>
+              )}
             </button>
           </SheetTrigger>
           <SheetContent side="left" className="w-56 p-4">
-            <NavLinks activePath={activePath} onNavigate={() => setOpen(false)} />
+            <NavLinks activePath={activePath} onNavigate={() => setOpen(false)} pingCount={pingCount} />
           </SheetContent>
         </Sheet>
       </div>

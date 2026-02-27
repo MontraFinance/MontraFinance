@@ -47,6 +47,22 @@
     {
       "path": "/api/cron/fee-harvester",
       "schedule": "0 */6 * * *"
+    },
+    {
+      "path": "/api/cron/agent-ai-checkin",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/agent-strategy",
+      "schedule": "*/5 * * * *"
+    },
+    {
+      "path": "/api/cron/farcaster-reply",
+      "schedule": "*/3 * * * *"
+    },
+    {
+      "path": "/api/cron/farcaster-digest",
+      "schedule": "0 14 * * 1"
     }
   ]
 }

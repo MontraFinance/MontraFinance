@@ -29,6 +29,7 @@ const TokensAnalytics = lazy(() => import("./pages/TokensAnalytics"));
 const RevenueTracker = lazy(() => import("./pages/RevenueTracker"));
 const DevShowcase = lazy(() => import("./pages/DevShowcase"));
 const TokenLaunchStudio = lazy(() => import("./pages/TokenLaunchStudio"));
+const MontraThesis = lazy(() => import("./pages/MontraThesis"));
 
 const queryClient = new QueryClient();
 
@@ -62,6 +63,7 @@ const App = () => (
             <Route path="/revenue" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><RevenueTracker /></Suspense>} />
             <Route path="/dev-showcase" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DevShowcase /></Suspense>} />
             <Route path="/launch-studio" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><TokenLaunchStudio /></Suspense>} />
+            <Route path="/thesis" element={<Suspense fallback={<div className="min-h-screen" style={{ background: '#f5f2eb' }} />}><MontraThesis /></Suspense>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
