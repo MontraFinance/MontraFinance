@@ -55,9 +55,20 @@ const getMetaMaskProvider = (): EVMProvider | null => {
   return null;
 };
 
+const getCoinbaseProvider = (): EVMProvider | null => {
+  if (typeof window === 'undefined') return null;
+  // Coinbase Wallet may inject its own provider or flag on window.ethereum
+  const dedicated = window.coinbaseWalletExtension;
+  if (dedicated) return dedicated;
+  const provider = window.ethereum;
+  if (provider?.isCoinbaseWallet) return provider;
+  return null;
+};
+
 const getProvider = (type: WalletType): EVMProvider | null => {
   if (type === 'phantom') return getPhantomEVMProvider();
   if (type === 'metamask') return getMetaMaskProvider();
+  if (type === 'coinbase') return getCoinbaseProvider();
   return null;
 };
 
@@ -135,11 +146,26 @@ export const WalletProvider = ({ children }: { children: ReactNode }) => {
         const provider = getProvider(type);
 
         if (!provider) {
-          const urls: Record<WalletType, string> = {
-            phantom: 'https://phantom.app/',
-            metamask: 'https://metamask.io/download/',
-          };
-          window.open(urls[type], '_blank');
+          // On mobile, use deep links to open the wallet app's dApp browser
+          const isMobile = /Mobile|Android/i.test(navigator.userAgent);
+          const dappUrl = encodeURIComponent(window.location.href);
+          const host = window.location.host + window.location.pathname;
+
+          if (isMobile) {
+            const mobileDeepLinks: Record<WalletType, string> = {
+              metamask: `https://metamask.app.link/dapp/${host}`,
+              phantom: `https://phantom.app/ul/browse/${host}`,
+              coinbase: `https://go.cb-w.com/dapp?cb_url=${dappUrl}`,
+            };
+            window.location.href = mobileDeepLinks[type];
+          } else {
+            const installUrls: Record<WalletType, string> = {
+              phantom: 'https://phantom.app/',
+              metamask: 'https://metamask.io/download/',
+              coinbase: 'https://www.coinbase.com/wallet/downloads',
+            };
+            window.open(installUrls[type], '_blank');
+          }
           setConnecting(false);
           return;
         }
