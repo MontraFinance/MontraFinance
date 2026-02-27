@@ -6,6 +6,8 @@ import { rpcCall } from "./rpc.js";
 
 export const USDC_ADDRESS = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 export const USDC_DECIMALS = 6;
+export const WETH_ADDRESS = "0x4200000000000000000000000000000000000006";
+export const WETH_DECIMALS = 18;
 export const COW_SETTLEMENT = "0x9008D19f58AAbD9eD0D60971565AA8510560ab41";
 export const COW_VAULT_RELAYER = "0xC92E8bdf79f0507f65a392b0ab4667716BFE0110";
 const MAX_UINT256 = "115792089237316195423570985008687907853269984665640564039457584007913129639935";
@@ -30,6 +32,54 @@ export async function getUsdcAllowance(owner: string): Promise<bigint> {
     COW_VAULT_RELAYER.slice(2).toLowerCase().padStart(64, "0");
   const hex = (await rpcCall("eth_call", [{ to: USDC_ADDRESS, data }, "latest"])) as string;
   return BigInt(hex || "0x0");
+}
+
+/**
+ * Read WETH balance via raw RPC call.
+ */
+export async function getWethBalance(wallet: string): Promise<number> {
+  const data = "0x70a08231" + wallet.slice(2).toLowerCase().padStart(64, "0");
+  const hex = (await rpcCall("eth_call", [{ to: WETH_ADDRESS, data }, "latest"])) as string;
+  const raw = BigInt(hex || "0x0");
+  return Number(raw) / 10 ** WETH_DECIMALS;
+}
+
+/**
+ * Read raw WETH balance (bigint) for precise swap amounts.
+ */
+export async function getWethBalanceRaw(wallet: string): Promise<bigint> {
+  const data = "0x70a08231" + wallet.slice(2).toLowerCase().padStart(64, "0");
+  const hex = (await rpcCall("eth_call", [{ to: WETH_ADDRESS, data }, "latest"])) as string;
+  return BigInt(hex || "0x0");
+}
+
+/**
+ * Check WETH allowance for CoW VaultRelayer.
+ */
+export async function getWethAllowance(owner: string): Promise<bigint> {
+  const data =
+    "0xdd62ed3e" +
+    owner.slice(2).toLowerCase().padStart(64, "0") +
+    COW_VAULT_RELAYER.slice(2).toLowerCase().padStart(64, "0");
+  const hex = (await rpcCall("eth_call", [{ to: WETH_ADDRESS, data }, "latest"])) as string;
+  return BigInt(hex || "0x0");
+}
+
+/**
+ * Approve WETH spending by CoW VaultRelayer.
+ */
+export async function approveWethForCow(privateKey: string): Promise<string> {
+  const { ethers } = await import("ethers");
+  const rpcUrl = process.env.BASE_RPC_URL || "https://mainnet.base.org";
+  const provider = new ethers.JsonRpcProvider(rpcUrl, 8453);
+  const wallet = new ethers.Wallet(privateKey, provider);
+
+  const iface = new ethers.Interface(["function approve(address spender, uint256 amount)"]);
+  const txData = iface.encodeFunctionData("approve", [COW_VAULT_RELAYER, MAX_UINT256]);
+
+  const tx = await wallet.sendTransaction({ to: WETH_ADDRESS, data: txData });
+  const receipt = await tx.wait();
+  return receipt?.hash || tx.hash;
 }
 
 /**
