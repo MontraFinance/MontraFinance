@@ -15,11 +15,12 @@ import StrategyMarketplace from '@/components/agents/StrategyMarketplace';
 import SmartDeployModal from '@/components/agents/SmartDeployModal';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Skeleton } from '@/components/ui/skeleton';
+import LiveIndicator from '@/components/LiveIndicator';
 
 type Tab = 'fleet' | 'deploy' | 'strategies';
 
 const AgentFleet = () => {
-  const { agents, loading } = useAgents();
+  const { agents, loading, realtimeStatus } = useAgents();
   const { connected, fullWalletAddress } = useWallet();
   const [activeTab, setActiveTab] = useState<Tab>('fleet');
   const [showDeployModal, setShowDeployModal] = useState(false);
@@ -68,6 +69,7 @@ const AgentFleet = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             {agents.filter(a => a.status === 'active').length} ACTIVE
           </span>
+          <LiveIndicator status={realtimeStatus} />
         </div>
         <div className="flex items-center gap-2 md:gap-4">
           <span className="text-xs text-muted-foreground font-mono hidden sm:inline">

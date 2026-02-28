@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { Activity, ExternalLink, Flame, RefreshCw } from 'lucide-react';
 import LaunchCountdown from '@/components/LaunchCountdown';
@@ -8,6 +8,9 @@ import { getBurnHistory } from '@/services/burnService';
 import type { BurnRecord } from '@/types/burn';
 import { AppSidebar } from '@/components/AppSidebar';
 import { Skeleton } from '@/components/ui/skeleton';
+import { useRealtimeBurns } from '@/hooks/useRealtimeBurns';
+import LiveIndicator from '@/components/LiveIndicator';
+import { toast } from 'sonner';
 
 const BASE_EXPLORER = 'https://basescan.org/tx/';
 
@@ -66,6 +69,27 @@ const Transactions = () => {
     fetchBurns();
   }, [connected, fullWalletAddress]);
 
+  // Real-time burn updates via Supabase
+  const { status: realtimeStatus } = useRealtimeBurns({
+    walletAddress: fullWalletAddress,
+    onInsert: useCallback((newBurn: BurnRecord) => {
+      setBurns(prev => {
+        if (prev.some(b => b.id === newBurn.id)) return prev;
+        return [newBurn, ...prev];
+      });
+      setTotal(prev => prev + 1);
+      toast(`New burn: ${Number(newBurn.amount_burned).toLocaleString()} tokens`);
+    }, []),
+    onUpdate: useCallback((updated: BurnRecord) => {
+      setBurns(prev => prev.map(b => b.id === updated.id ? updated : b));
+      if (updated.status === 'confirmed' || updated.status === 'processed') {
+        toast.success(`Burn confirmed: ${Number(updated.amount_burned).toLocaleString()} tokens`);
+      } else if (updated.status === 'failed') {
+        toast.error('Burn failed');
+      }
+    }, []),
+  });
+
   return (
     <div className="min-h-screen bg-background text-foreground">
       <LaunchCountdown title="Transactions" />
@@ -77,6 +101,7 @@ const Transactions = () => {
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             {total} BURNS
           </span>
+          <LiveIndicator status={realtimeStatus} />
         </div>
         <div className="flex items-center gap-4">
           <span className="text-xs text-muted-foreground font-mono hidden sm:inline">
@@ -90,7 +115,7 @@ const Transactions = () => {
         <AppSidebar activePage="transactions" />
 
         {/* Main content */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 min-w-0 overflow-x-hidden p-4 md:p-6">
           {!connected ? (
             <div className="bg-card border border-border rounded-2xl p-12 text-center">
               <Activity size={40} className="text-muted-foreground/30 mx-auto mb-4" />

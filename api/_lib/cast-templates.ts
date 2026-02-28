@@ -1,7 +1,9 @@
 /**
  * Farcaster cast message templates
  * All return strings under 320 characters. Pure functions, no side effects.
+ * Frame URLs appended to casts enable interactive Frames v2 cards in Farcaster.
  */
+const FRAMES = "https://montrafinance.com/api/frames";
 
 interface AgentInfo {
   id: string;
@@ -30,7 +32,7 @@ export function castAgentDeployed(agent: AgentInfo): string {
     ? ` | ERC-8004 #${agent.erc8004_agent_id} on Base`
     : "";
   return truncate(
-    `\ud83e\udd16 New agent "${name}" deployed on Montra Finance using ${strategy} strategy${erc8004Tag}.`,
+    `\ud83e\udd16 New agent "${name}" deployed on Montra Finance using ${strategy} strategy${erc8004Tag}.\n\n${FRAMES}/agent?id=${agent.id}`,
     320,
   );
 }
@@ -47,7 +49,7 @@ export function castPnlMilestone(agent: AgentInfo, threshold: number): string {
   const name = agentName(agent);
   const formatted = threshold >= 1000 ? `$${(threshold / 1000).toFixed(0)}K` : `$${threshold}`;
   return truncate(
-    `\ud83d\udcc8 Agent "${name}" just crossed ${formatted} in P&L on Montra Finance. Autonomous trading on Base is heating up \ud83d\udd25`,
+    `\ud83d\udcc8 Agent "${name}" just crossed ${formatted} in P&L on Montra Finance. Autonomous trading on Base is heating up \ud83d\udd25\n\n${FRAMES}/agent?id=${agent.id}`,
     320,
   );
 }
@@ -63,7 +65,7 @@ export function castTradeMilestone(agent: AgentInfo, count: number): string {
 export function castBurnConfirmed(burn: BurnInfo): string {
   const amount = (burn.amount_burned || 0).toLocaleString();
   return truncate(
-    `\ud83d\udd25 ${amount} $MONTRA burned on Base. Wallet ${burn.wallet_address.slice(0, 6)}...${burn.wallet_address.slice(-4)} just reduced the supply forever.`,
+    `\ud83d\udd25 ${amount} $MONTRA burned on Base. Wallet ${burn.wallet_address.slice(0, 6)}...${burn.wallet_address.slice(-4)} just reduced the supply forever.\n\n${FRAMES}/burns`,
     320,
   );
 }
@@ -71,7 +73,7 @@ export function castBurnConfirmed(burn: BurnInfo): string {
 export function castSentimentTrade(score: number, usdcAmount: number): string {
   const scoreDisplay = score > 0 ? `+${score.toFixed(2)}` : score.toFixed(2);
   return truncate(
-    `\ud83d\udce1 Community vibes triggered a buy! Farcaster sentiment hit ${scoreDisplay} \u2014 auto-bought $${usdcAmount} USDC of $MONTRA via CoW Protocol (MEV-protected). The community speaks, the protocol listens.`,
+    `\ud83d\udce1 Community vibes triggered a buy! Farcaster sentiment hit ${scoreDisplay} \u2014 auto-bought $${usdcAmount} USDC of $MONTRA via CoW Protocol (MEV-protected).\n\n${FRAMES}/sentiment`,
     320,
   );
 }
@@ -108,7 +110,7 @@ export function castTokenDeployed(token: TokenDeployInfo): string {
 
 export function castWeeklyDigest(totalReplies: number, uniqueAuthors: number): string {
   return truncate(
-    `📊 Weekly recap: Montra Finance answered ${totalReplies} community questions from ${uniqueAuthors} unique users this week. Ask us anything about DeFi, trading, and autonomous agents on Base.`,
+    `📊 Weekly recap: Montra Finance answered ${totalReplies} community questions from ${uniqueAuthors} unique users this week. Ask us anything about DeFi, trading, and autonomous agents on Base.\n\n${FRAMES}/home`,
     320,
   );
 }

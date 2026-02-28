@@ -4,11 +4,13 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { WagmiProviderWrapper, OnchainKitProviderWrapper } from "@/providers/OnchainProviders";
 import { WalletProvider } from "@/contexts/WalletContext";
 import { AgentProvider } from "@/contexts/AgentContext";
 import { TierProvider } from "@/contexts/TierContext";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import WalletModal from "@/components/WalletModal";
+import '@coinbase/onchainkit/styles.css';
 import Index from "./pages/Index";
 import Dashboard from "./pages/Dashboard";
 import AgentFleet from "./pages/AgentFleet";
@@ -29,8 +31,10 @@ const TokensAnalytics = lazy(() => import("./pages/TokensAnalytics"));
 const RevenueTracker = lazy(() => import("./pages/RevenueTracker"));
 const DevShowcase = lazy(() => import("./pages/DevShowcase"));
 const TokenLaunchStudio = lazy(() => import("./pages/TokenLaunchStudio"));
+const AnalyseToken = lazy(() => import("./pages/AnalyseToken"));
 const MontraThesis = lazy(() => import("./pages/MontraThesis"));
 const Support = lazy(() => import("./pages/Support"));
+const MobileLanding = lazy(() => import("./pages/baseapp/MobileLanding"));
 const MobileDashboard = lazy(() => import("./pages/baseapp/MobileDashboard"));
 const MobilePortfolio = lazy(() => import("./pages/baseapp/MobilePortfolio"));
 const MobileTransactions = lazy(() => import("./pages/baseapp/MobileTransactions"));
@@ -39,8 +43,10 @@ const MobileAnalytics = lazy(() => import("./pages/baseapp/MobileAnalytics"));
 const queryClient = new QueryClient();
 
 const App = () => (
+  <WagmiProviderWrapper>
   <QueryClientProvider client={queryClient}>
     <ThemeProvider>
+    <OnchainKitProviderWrapper>
     <WalletProvider>
       <TierProvider>
       <AgentProvider>
@@ -68,10 +74,12 @@ const App = () => (
             <Route path="/revenue" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><RevenueTracker /></Suspense>} />
             <Route path="/dev-showcase" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><DevShowcase /></Suspense>} />
             <Route path="/launch-studio" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><TokenLaunchStudio /></Suspense>} />
+            <Route path="/analyse-token" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><AnalyseToken /></Suspense>} />
             <Route path="/support" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><Support /></Suspense>} />
             <Route path="/thesis" element={<Suspense fallback={<div className="min-h-screen" style={{ background: '#f5f2eb' }} />}><MontraThesis /></Suspense>} />
             {/* Base App mobile mini-app routes */}
-            <Route path="/baseapp" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><MobileDashboard /></Suspense>} />
+            <Route path="/baseapp" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><MobileLanding /></Suspense>} />
+            <Route path="/baseapp/terminal" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><MobileDashboard /></Suspense>} />
             <Route path="/baseapp/portfolio" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><MobilePortfolio /></Suspense>} />
             <Route path="/baseapp/transactions" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><MobileTransactions /></Suspense>} />
             <Route path="/baseapp/analytics" element={<Suspense fallback={<div className="min-h-screen bg-background" />}><MobileAnalytics /></Suspense>} />
@@ -83,8 +91,10 @@ const App = () => (
       </AgentProvider>
       </TierProvider>
     </WalletProvider>
+    </OnchainKitProviderWrapper>
     </ThemeProvider>
   </QueryClientProvider>
+  </WagmiProviderWrapper>
 );
 
 export default App;

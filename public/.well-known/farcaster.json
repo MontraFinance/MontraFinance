@@ -1,0 +1,16 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjI4Mzc4NTEsInR5cGUiOiJjdXN0b2R5Iiwia2V5IjoiMHgwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwMDAwIn0",
+    "payload": "eyJkb21haW4iOiJtb250cmFmaW5hbmNlLmNvbSJ9",
+    "signature": "placeholder"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Montra Finance",
+    "iconUrl": "https://montrafinance.com/favicon.ico",
+    "homeUrl": "https://montrafinance.com/api/frames/home",
+    "splashImageUrl": "https://montrafinance.com/favicon.ico",
+    "splashBackgroundColor": "#09090b",
+    "webhookUrl": "https://montrafinance.com/api/frames/webhook"
+  }
+}

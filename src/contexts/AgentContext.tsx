@@ -5,6 +5,7 @@ import { useWallet } from '@/contexts/WalletContext';
 import {
   deployAgentAPI,
   listAgentsAPI,
+  mapRowToAgent,
   updateStatusAPI,
   deleteAgentAPI,
   fundAgentAPI,
@@ -20,6 +21,8 @@ import {
   deleteExchangeKeyAPI,
 } from '@/services/exchangeKeyService';
 import { registerAgent as registerAgentERC8004 } from '@/lib/erc8004';
+import { useRealtimeAgents } from '@/hooks/useRealtimeAgents';
+import { toast } from 'sonner';
 
 const STORAGE_KEY = 'montra_agents';
 const STATS_DEBOUNCE_MS = 30_000;
@@ -39,6 +42,43 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const [exchangeKeys, setExchangeKeys] = useState<ExchangeKey[]>([]);
   const [exchangeKeysLoading, setExchangeKeysLoading] = useState(false);
   const statsTimers = useRef<Record<string, number>>({});
+  const prevStatusMap = useRef<Map<string, string>>(new Map());
+
+  // Real-time agent updates via Supabase
+  const { status: realtimeStatus } = useRealtimeAgents({
+    walletAddress: fullWalletAddress,
+    onInsert: useCallback((row) => {
+      try {
+        const agent = mapRowToAgent(row as any);
+        setAgents(prev => {
+          if (prev.some(a => a.id === agent.id)) {
+            return prev.map(a => a.id === agent.id ? agent : a);
+          }
+          return [...prev, agent];
+        });
+        prevStatusMap.current.set(agent.id, agent.status);
+        toast(`Agent ${agent.config?.name || 'new'} deployed`);
+      } catch { /* ignore malformed rows */ }
+    }, []),
+    onUpdate: useCallback((row) => {
+      try {
+        const agent = mapRowToAgent(row as any);
+        setAgents(cur => cur.map(a => a.id === agent.id ? agent : a));
+        const oldStatus = prevStatusMap.current.get(agent.id);
+        if (oldStatus && oldStatus !== agent.status) {
+          toast(`Agent ${agent.config?.name}: ${oldStatus} → ${agent.status}`);
+        }
+        prevStatusMap.current.set(agent.id, agent.status);
+      } catch { /* ignore malformed rows */ }
+    }, []),
+    onDelete: useCallback((oldRow) => {
+      const id = (oldRow as any)?.id;
+      if (id) {
+        setAgents(prev => prev.filter(a => a.id !== id));
+        prevStatusMap.current.delete(id);
+      }
+    }, []),
+  });
 
   // Load agents from API when wallet changes
   useEffect(() => {
@@ -90,6 +130,10 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
       if (!cancelled) {
         setAgents(remote);
+        // Seed prevStatusMap for real-time diff detection
+        const map = new Map<string, string>();
+        remote.forEach(a => map.set(a.id, a.status));
+        prevStatusMap.current = map;
         // Clean up localStorage if we successfully loaded from API
         if (remote.length > 0) {
           localStorage.removeItem(STORAGE_KEY);
@@ -377,6 +421,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     <AgentContext.Provider value={{
       agents,
       loading,
+      realtimeStatus,
       exchangeKeys,
       exchangeKeysLoading,
       deployAgent,
