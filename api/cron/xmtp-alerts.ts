@@ -115,6 +115,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       } else {
         failed++;
       }
+
+      // ── Telegram parallel send ──
+      if (process.env.TELEGRAM_BOT_TOKEN) {
+        try {
+          const { sendTelegramMessage, formatTelegramAlert } = await import("../_lib/telegram.js");
+          const { data: tgLink } = await supabase
+            .from("telegram_links")
+            .select("telegram_user_id, alert_types")
+            .eq("wallet_address", sub.wallet_address.toLowerCase())
+            .eq("is_active", true)
+            .maybeSingle();
+
+          if (tgLink && (!tgLink.alert_types || tgLink.alert_types.includes("milestone"))) {
+            const agentName = agents?.find((a: any) => a.id === event.agent_id)?.config?.name || event.agent_id.slice(0, 8);
+            const pnl = agents?.find((a: any) => a.id === event.agent_id)?.stats?.pnlUsd ?? 0;
+            const tgMsg = formatTelegramAlert("milestone", {
+              agentName,
+              milestone: event.event_key.split(":").pop() ? `$${Number(event.event_key.split(":").pop()).toLocaleString()} P&L` : "a milestone",
+              pnl: `$${pnl.toFixed(2)}`,
+            });
+            await sendTelegramMessage(tgLink.telegram_user_id, tgMsg).catch(() => {});
+          }
+        } catch {
+          // Non-blocking
+        }
+      }
     }
   }
 
