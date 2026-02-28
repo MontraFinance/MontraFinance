@@ -8,7 +8,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method === "OPTIONS") return res.status(204).end();
   if (req.method !== "POST") return res.status(405).json({ error: "Method not allowed" });
 
-  const { name, email, subject, message } = req.body || {};
+  const { name, email, subject, message, attachments } = req.body || {};
 
   if (!name || !email || !subject || !message) {
     return res.status(400).json({ error: "All fields are required" });
@@ -22,13 +22,23 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const resend = new Resend(apiKey);
 
   try {
-    await resend.emails.send({
+    const emailPayload: any = {
       from: "MontraFi Support <support@montrafinance.com>",
       to: "montrafinance@outlook.com",
       replyTo: email,
       subject: `[Support] ${subject}`,
       text: `Name: ${name}\nEmail: ${email}\nSubject: ${subject}\n\n${message}`,
-    });
+    };
+
+    if (Array.isArray(attachments) && attachments.length > 0) {
+      emailPayload.attachments = attachments.slice(0, 5).map((a: any) => ({
+        filename: a.filename || 'image.png',
+        content: Buffer.from(a.content, 'base64'),
+        contentType: a.type || 'image/png',
+      }));
+    }
+
+    await resend.emails.send(emailPayload);
 
     return res.status(200).json({ ok: true });
   } catch (err: any) {

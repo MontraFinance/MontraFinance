@@ -61,15 +61,15 @@ const AgentFleet = () => {
     <div className="min-h-screen bg-background text-foreground">
       <LaunchCountdown title="Agent Fleet" />
       {/* Top bar */}
-      <header className="border-b border-border px-6 py-3 flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h1 className="text-sm font-mono font-bold tracking-wider">AGENT FLEET</h1>
-          <span className="text-xs font-mono text-primary flex items-center gap-1">
+      <header className="border-b border-border px-3 md:px-6 py-3 flex flex-wrap items-center justify-between gap-2">
+        <div className="flex items-center gap-2 md:gap-4">
+          <h1 className="text-xs md:text-sm font-mono font-bold tracking-wider">AGENT FLEET</h1>
+          <span className="text-[10px] md:text-xs font-mono text-primary flex items-center gap-1">
             <span className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
             {agents.filter(a => a.status === 'active').length} ACTIVE
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 md:gap-4">
           <span className="text-xs text-muted-foreground font-mono hidden sm:inline">
             {new Date().toLocaleString()}
           </span>
@@ -82,14 +82,14 @@ const AgentFleet = () => {
         <AppSidebar activePage="agents" />
 
         {/* Main content */}
-        <main className="flex-1 p-4 md:p-6">
+        <main className="flex-1 min-w-0 overflow-x-hidden p-4 md:p-6">
           {/* Tab bar */}
-          <div className="flex items-center gap-1 mb-6 border-b border-border pb-3">
+          <div className="flex flex-wrap items-center gap-1 mb-6 border-b border-border pb-3">
             {tabs.map(tab => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`text-xs font-mono font-bold px-4 py-1.5 rounded-lg transition ${
+                className={`text-[10px] md:text-xs font-mono font-bold px-3 md:px-4 py-1.5 rounded-lg transition ${
                   activeTab === tab.id
                     ? 'text-primary-foreground bg-primary'
                     : 'text-muted-foreground hover:text-foreground hover:bg-secondary'
@@ -98,20 +98,22 @@ const AgentFleet = () => {
                 {tab.label}
               </button>
             ))}
-            {connected && portfolioValue > 0 && (
+            <div className="flex items-center gap-1.5 ml-auto">
+              {connected && portfolioValue > 0 && (
+                <button
+                  onClick={() => setShowSmartDeploy(true)}
+                  className="flex items-center gap-1 text-[10px] md:text-xs font-mono text-purple-600 border border-purple-300 rounded-lg px-2 md:px-3 py-1.5 hover:bg-purple-50 transition"
+                >
+                  <Brain size={12} /> <span className="hidden sm:inline">Smart</span> Deploy
+                </button>
+              )}
               <button
-                onClick={() => setShowSmartDeploy(true)}
-                className="ml-auto flex items-center gap-1.5 text-xs font-mono text-purple-600 border border-purple-300 rounded-lg px-3 py-1.5 hover:bg-purple-50 transition"
+                onClick={handleDeployNew}
+                className="flex items-center gap-1 text-[10px] md:text-xs font-mono text-primary border border-primary/30 rounded-lg px-2 md:px-3 py-1.5 hover:bg-primary/10 transition"
               >
-                <Brain size={12} /> Smart Deploy
+                <Plus size={12} /> <span className="hidden sm:inline">New</span> Agent
               </button>
-            )}
-            <button
-              onClick={handleDeployNew}
-              className={`${connected && portfolioValue > 0 ? '' : 'ml-auto '}flex items-center gap-1.5 text-xs font-mono text-primary border border-primary/30 rounded-lg px-3 py-1.5 hover:bg-primary/10 transition`}
-            >
-              <Plus size={12} /> New Agent
-            </button>
+            </div>
           </div>
 
           {/* Fleet Tab */}
@@ -119,7 +121,7 @@ const AgentFleet = () => {
             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.2 }}>
               {loading ? (
                 <div className="space-y-4">
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     {[1,2,3].map(i => <Skeleton key={i} className="h-20 rounded-2xl" />)}
                   </div>
                   <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
@@ -221,6 +223,7 @@ const AgentFleet = () => {
         walletAddress={fullWalletAddress || ''}
         portfolioValue={portfolioValue}
       />
+
     </div>
   );
 };

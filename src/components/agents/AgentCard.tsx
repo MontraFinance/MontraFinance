@@ -183,6 +183,21 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
     : 0;
 
   const isDeploying = agent.status === 'deploying';
+
+  // Safety timeout: auto-transition stuck deploying agents after 30s
+  useEffect(() => {
+    if (!isDeploying) return;
+    const created = new Date(agent.createdAt).getTime();
+    const elapsed = Date.now() - created;
+    const remaining = Math.max(0, 30_000 - elapsed);
+    if (elapsed >= 30_000) {
+      // Already past timeout — transition immediately
+      stopAgent(agent.id);
+      return;
+    }
+    const timer = setTimeout(() => stopAgent(agent.id), remaining);
+    return () => clearTimeout(timer);
+  }, [isDeploying, agent.id, agent.createdAt]);
   // Derive exchange name from portfolio response first, then fall back to looking up the exchange key
   const exchangeName = cexPortfolio?.exchange
     ? EXCHANGE_NAMES[cexPortfolio.exchange] || cexPortfolio.exchange.toUpperCase()
@@ -287,7 +302,13 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
       {isDeploying ? (
         <div className="py-6 text-center">
           <div className="inline-block w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin mb-2" />
-          <p className="text-[10px] font-mono text-muted-foreground">Initializing agent...</p>
+          <p className="text-[10px] font-mono text-muted-foreground mb-3">Initializing agent...</p>
+          <button
+            onClick={() => deleteAgent(agent.id)}
+            className="flex items-center gap-1 mx-auto text-[10px] font-mono text-muted-foreground border border-border rounded-lg px-3 py-1.5 hover:text-destructive hover:border-destructive/30 transition"
+          >
+            <StopCircle size={12} /> Cancel
+          </button>
         </div>
       ) : (
         <>
@@ -345,7 +366,7 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
               <div>
                 <p className="mb-1">BUDGET</p>
                 <p className="text-sm font-bold text-foreground">
-                  ${walletBudget.remainingBudget.toFixed(0)}
+                  ${(walletBudget.remainingBudget > 0 ? walletBudget.remainingBudget : safeNum(agent.config?.budgetAmount)).toFixed(0)}
                 </p>
               </div>
             )}
@@ -581,6 +602,22 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
             </div>
           )}
 
+          {/* Setup guide for newly deployed unfunded agents */}
+          {!agent.fundingConfirmed && agent.status === 'stopped' && !isCexAgent && !isMonitorMode && (
+            <div className="mb-3 p-2.5 rounded-xl bg-primary/5 border border-primary/20">
+              <p className="text-[10px] font-mono font-bold text-primary mb-1.5">Setup Required</p>
+              <ol className="text-[9px] font-mono text-muted-foreground space-y-1 list-decimal list-inside">
+                <li>Click <span className="text-foreground font-bold">Fund</span> to send USDC to the agent wallet</li>
+                <li>Once funded, click <span className="text-foreground font-bold">Start Trading</span> to activate</li>
+              </ol>
+              {safeNum(agent.config?.budgetAmount) > 0 && (
+                <p className="text-[9px] font-mono text-muted-foreground mt-1.5">
+                  Recommended budget: <span className="text-primary font-bold">${safeNum(agent.config?.budgetAmount).toLocaleString()}</span>
+                </p>
+              )}
+            </div>
+          )}
+
           {/* CEX Risk Limits bar — trading only */}
           {isCexAgent && !isMonitorMode && (
             <div className="mb-3">
@@ -607,6 +644,14 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
                 className="flex items-center gap-1 text-[10px] font-mono text-muted-foreground border border-border rounded-lg px-2.5 py-1.5 hover:text-primary hover:border-primary/30 transition"
               >
                 <PlayCircle size={12} /> Resume
+              </button>
+            )}
+            {agent.status === 'stopped' && (
+              <button
+                onClick={() => resumeAgent(agent.id)}
+                className="flex items-center gap-1 text-[10px] font-mono text-primary border border-primary/30 rounded-lg px-2.5 py-1.5 hover:bg-primary/10 transition"
+              >
+                <PlayCircle size={12} /> Start
               </button>
             )}
             {(agent.status === 'active' || agent.status === 'paused') && (
@@ -662,20 +707,23 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
               </button>
             )}
             {confirmDelete ? (
-              <div className="flex items-center gap-1.5 ml-auto">
-                <span className="text-[10px] font-mono text-destructive">Delete?</span>
-                <button
-                  onClick={() => deleteAgent(agent.id)}
-                  className="text-[10px] font-mono font-bold text-destructive border border-destructive/40 rounded-lg px-2 py-1 hover:bg-destructive/10 transition"
-                >
-                  Yes
-                </button>
-                <button
-                  onClick={() => setConfirmDelete(false)}
-                  className="text-[10px] font-mono text-muted-foreground border border-border rounded-lg px-2 py-1 hover:text-foreground transition"
-                >
-                  No
-                </button>
+              <div className="w-full mt-2 p-3 rounded-xl bg-red-500/5 border border-red-500/20">
+                <p className="text-[10px] font-mono text-destructive font-bold mb-1">Are you sure you want to delete this agent?</p>
+                <p className="text-[9px] font-mono text-muted-foreground mb-3">Any remaining funds in the agent wallet will be lost. This action cannot be undone.</p>
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={() => deleteAgent(agent.id)}
+                    className="text-[10px] font-mono font-bold text-white bg-destructive rounded-lg px-3 py-1.5 hover:bg-destructive/90 transition"
+                  >
+                    Yes, Delete
+                  </button>
+                  <button
+                    onClick={() => setConfirmDelete(false)}
+                    className="text-[10px] font-mono text-muted-foreground border border-border rounded-lg px-3 py-1.5 hover:text-foreground transition"
+                  >
+                    Cancel
+                  </button>
+                </div>
               </div>
             ) : (
               <button

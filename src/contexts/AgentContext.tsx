@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, useRef } from 'react';
-import type { Agent, AgentConfig, AgentStats, AgentContextType, PnlDataPoint } from '@/types/agent';
-import { deriveAgentWalletAddress, generateInitialStats, generateInitialPnlHistory } from '@/data/agentMockData';
+import type { Agent, AgentConfig, AgentStats, AgentContextType, PnlDataPoint, DeployResult, ExchangeKey } from '@/types/agent';
+import { generateInitialStats, generateInitialPnlHistory } from '@/data/agentMockData';
 import { useWallet } from '@/contexts/WalletContext';
 import {
   deployAgentAPI,
@@ -10,7 +10,15 @@ import {
   fundAgentAPI,
   updateStatsAPI,
   registerAgentAPI,
+  confirmFundingAPI,
+  activateTradingAPI,
+  withdrawFromAgentAPI,
 } from '@/services/agentService';
+import {
+  listExchangeKeysAPI,
+  addExchangeKeyAPI,
+  deleteExchangeKeyAPI,
+} from '@/services/exchangeKeyService';
 import { registerAgent as registerAgentERC8004 } from '@/lib/erc8004';
 
 const STORAGE_KEY = 'montra_agents';
@@ -28,6 +36,8 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   const { fullWalletAddress, getProvider } = useWallet();
   const [agents, setAgents] = useState<Agent[]>([]);
   const [loading, setLoading] = useState(false);
+  const [exchangeKeys, setExchangeKeys] = useState<ExchangeKey[]>([]);
+  const [exchangeKeysLoading, setExchangeKeysLoading] = useState(false);
   const statsTimers = useRef<Record<string, number>>({});
 
   // Load agents from API when wallet changes
@@ -91,39 +101,105 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     return () => { cancelled = true; };
   }, [fullWalletAddress]);
 
-  const deployAgent = useCallback(async (config: AgentConfig, ownerAddress: string): Promise<Agent> => {
+  // Load exchange keys when wallet changes
+  useEffect(() => {
+    if (!fullWalletAddress) {
+      setExchangeKeys([]);
+      return;
+    }
+    let cancelled = false;
+    setExchangeKeysLoading(true);
+    listExchangeKeysAPI(fullWalletAddress).then(keys => {
+      if (!cancelled) setExchangeKeys(keys);
+    }).finally(() => {
+      if (!cancelled) setExchangeKeysLoading(false);
+    });
+    return () => { cancelled = true; };
+  }, [fullWalletAddress]);
+
+  const refreshExchangeKeys = useCallback(async () => {
+    if (!fullWalletAddress) return;
+    const keys = await listExchangeKeysAPI(fullWalletAddress);
+    setExchangeKeys(keys);
+  }, [fullWalletAddress]);
+
+  const addExchangeKey = useCallback(async (
+    exchange: string,
+    label: string,
+    apiKey: string,
+    secret: string,
+    passphrase?: string,
+    permissions?: string[],
+  ): Promise<ExchangeKey> => {
+    if (!fullWalletAddress) throw new Error('Wallet not connected');
+    const key = await addExchangeKeyAPI(fullWalletAddress, exchange, label, apiKey, secret, passphrase, permissions);
+    setExchangeKeys(prev => [key, ...prev]);
+    return key;
+  }, [fullWalletAddress]);
+
+  const deleteExchangeKey = useCallback(async (keyId: string): Promise<void> => {
+    if (!fullWalletAddress) throw new Error('Wallet not connected');
+    await deleteExchangeKeyAPI(fullWalletAddress, keyId);
+    setExchangeKeys(prev => prev.filter(k => k.id !== keyId));
+  }, [fullWalletAddress]);
+
+  const deployAgent = useCallback(async (config: AgentConfig, ownerAddress: string): Promise<DeployResult> => {
     const id = crypto.randomUUID();
     const agent: Agent = {
       id,
       config,
       wallet: {
-        address: deriveAgentWalletAddress(id),
-        allocatedBudget: config.budgetAmount,
-        remainingBudget: config.budgetAmount,
-        currency: config.budgetCurrency,
+        address: '', // Will be filled by API response
+        allocatedBudget: 0, // Budget starts at 0 until funded
+        remainingBudget: 0,
+        currency: config.budgetCurrency || 'USDC',
       },
       stats: generateInitialStats(),
       status: 'deploying',
-      pnlHistory: generateInitialPnlHistory(config.budgetAmount, config.strategyId),
+      pnlHistory: generateInitialPnlHistory(config.budgetAmount || 0, config.strategyId),
       createdAt: new Date().toISOString(),
       deployedByAddress: ownerAddress,
       erc8004AgentId: null,
       erc8004TxHash: null,
       erc8004RegisteredAt: null,
+      apiKeyId: null,
+      apiKeyMasked: null,
+      agentWalletAddress: null,
+      fundingTxHash: null,
+      fundingConfirmed: false,
+      tradingEnabled: false,
+      exchangeKeyId: config.exchangeKeyId || null,
     };
 
     // Optimistic local update
     setAgents(prev => [...prev, agent]);
 
+    let deployResponse;
     try {
-      await deployAgentAPI(ownerAddress, agent);
+      deployResponse = await deployAgentAPI(ownerAddress, agent);
     } catch {
       // Rollback on failure
       setAgents(prev => prev.filter(a => a.id !== id));
       throw new Error('Failed to deploy agent');
     }
 
-    // Attempt on-chain ERC-8004 registration, then activate
+    // Use structured response from deployAgentAPI
+    const { agentWalletAddress, apiKeyMasked, apiKeyId } = deployResponse;
+
+    setAgents(prev => prev.map(a =>
+      a.id === id
+        ? {
+            ...a,
+            status: 'stopped' as const,
+            wallet: { ...a.wallet, address: agentWalletAddress || a.wallet.address },
+            agentWalletAddress,
+            apiKeyId,
+            apiKeyMasked,
+          }
+        : a,
+    ));
+
+    // Attempt on-chain ERC-8004 registration, then set status to deploying (awaiting funding)
     (async () => {
       try {
         const provider = getProvider();
@@ -143,15 +219,16 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
         }
       } catch (err) {
         console.warn('[AgentContext] On-chain ERC-8004 registration failed (non-fatal):', err);
-      } finally {
-        setAgents(prev => prev.map(a => a.id === id ? { ...a, status: 'active' } : a));
-        if (fullWalletAddress) {
-          updateStatusAPI(fullWalletAddress, id, 'active').catch((err) => console.warn('[AgentContext] API call failed:', err));
-        }
       }
     })();
 
-    return agent;
+    return {
+      agent: { ...agent, agentWalletAddress, apiKeyId, apiKeyMasked },
+      agentWalletAddress: agentWalletAddress || '',
+      apiKey: deployResponse.apiKey || '',
+      apiKeyId: apiKeyId || '',
+      apiKeyMasked: apiKeyMasked || '',
+    };
   }, [fullWalletAddress, getProvider]);
 
   const pauseAgent = useCallback((id: string) => {
@@ -162,7 +239,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
   }, [fullWalletAddress]);
 
   const resumeAgent = useCallback((id: string) => {
-    setAgents(prev => prev.map(a => a.id === id && a.status === 'paused' ? { ...a, status: 'active' } : a));
+    setAgents(prev => prev.map(a => a.id === id && (a.status === 'paused' || a.status === 'stopped') ? { ...a, status: 'active' } : a));
     if (fullWalletAddress) {
       updateStatusAPI(fullWalletAddress, id, 'active').catch((err) => console.warn('[AgentContext] API call failed:', err));
     }
@@ -170,7 +247,7 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
 
   const stopAgent = useCallback((id: string) => {
     setAgents(prev => prev.map(a =>
-      a.id === id && (a.status === 'active' || a.status === 'paused')
+      a.id === id && (a.status === 'active' || a.status === 'paused' || a.status === 'deploying')
         ? { ...a, status: 'stopped' }
         : a
     ));
@@ -225,6 +302,50 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     }
   }, [fullWalletAddress]);
 
+  const confirmAgentFunding = useCallback(async (agentId: string, txHash: string, amount: number): Promise<void> => {
+    if (!fullWalletAddress) throw new Error('Wallet not connected');
+    await confirmFundingAPI(fullWalletAddress, agentId, txHash, amount);
+    setAgents(prev => prev.map(a => {
+      if (a.id !== agentId) return a;
+      return {
+        ...a,
+        fundingTxHash: txHash,
+        fundingConfirmed: true,
+        wallet: {
+          ...a.wallet,
+          allocatedBudget: a.wallet.allocatedBudget + amount,
+          remainingBudget: a.wallet.remainingBudget + amount,
+        },
+      };
+    }));
+  }, [fullWalletAddress]);
+
+  const activateTrading = useCallback(async (agentId: string): Promise<void> => {
+    if (!fullWalletAddress) throw new Error('Wallet not connected');
+    await activateTradingAPI(fullWalletAddress, agentId);
+    setAgents(prev => prev.map(a =>
+      a.id === agentId
+        ? { ...a, tradingEnabled: true, status: 'active' }
+        : a,
+    ));
+  }, [fullWalletAddress]);
+
+  const withdrawFromAgent = useCallback(async (agentId: string, amount: number): Promise<string> => {
+    if (!fullWalletAddress) throw new Error('Wallet not connected');
+    const txHash = await withdrawFromAgentAPI(fullWalletAddress, agentId, amount);
+    setAgents(prev => prev.map(a => {
+      if (a.id !== agentId) return a;
+      return {
+        ...a,
+        wallet: {
+          ...a.wallet,
+          remainingBudget: Math.max(0, a.wallet.remainingBudget - amount),
+        },
+      };
+    }));
+    return txHash;
+  }, [fullWalletAddress]);
+
   const getAgent = useCallback((id: string): Agent | undefined => {
     return agents.find(a => a.id === id);
   }, [agents]);
@@ -256,6 +377,8 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
     <AgentContext.Provider value={{
       agents,
       loading,
+      exchangeKeys,
+      exchangeKeysLoading,
       deployAgent,
       pauseAgent,
       resumeAgent,
@@ -265,6 +388,12 @@ export function AgentProvider({ children }: { children: React.ReactNode }) {
       updateAgentStats,
       getAgent,
       registerAgentOnChain,
+      confirmAgentFunding,
+      activateTrading,
+      withdrawFromAgent,
+      addExchangeKey,
+      deleteExchangeKey,
+      refreshExchangeKeys,
     }}>
       {children}
     </AgentContext.Provider>

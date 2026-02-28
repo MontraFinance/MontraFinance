@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { LifeBuoy, Send, CheckCircle, XCircle, Loader2 } from 'lucide-react';
+import { useState, useCallback, useRef } from 'react';
+import { LifeBuoy, Send, CheckCircle, XCircle, Loader2, Paperclip, X } from 'lucide-react';
 import { AppSidebar } from '@/components/AppSidebar';
 import ConnectWalletButton from '@/components/ConnectWalletButton';
 import TierBadge from '@/components/TierBadge';
@@ -27,8 +27,32 @@ export default function Support() {
   const [email, setEmail] = useState('');
   const [subject, setSubject] = useState<string>(SUBJECT_OPTIONS[0]);
   const [message, setMessage] = useState('');
+  const [attachments, setAttachments] = useState<File[]>([]);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const [sending, setSending] = useState(false);
   const [status, setStatus] = useState<'idle' | 'success' | 'error'>('idle');
+
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(e.target.files || []);
+    const imageFiles = files.filter(f => f.type.startsWith('image/'));
+    setAttachments(prev => [...prev, ...imageFiles].slice(0, 5));
+    if (fileInputRef.current) fileInputRef.current.value = '';
+  };
+
+  const removeAttachment = (index: number) => {
+    setAttachments(prev => prev.filter((_, i) => i !== index));
+  };
+
+  const filesToBase64 = async (files: File[]): Promise<{ filename: string; content: string; type: string }[]> => {
+    return Promise.all(files.map(file => new Promise<{ filename: string; content: string; type: string }>((resolve) => {
+      const reader = new FileReader();
+      reader.onload = () => {
+        const base64 = (reader.result as string).split(',')[1];
+        resolve({ filename: file.name, content: base64, type: file.type });
+      };
+      reader.readAsDataURL(file);
+    })));
+  };
 
   const handleSubmit = useCallback(async (e: React.FormEvent) => {
     e.preventDefault();
@@ -36,10 +60,11 @@ export default function Support() {
     setStatus('idle');
 
     try {
+      const encodedAttachments = attachments.length > 0 ? await filesToBase64(attachments) : [];
       const res = await fetch('/api/support/send', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ name, email, subject, message }),
+        body: JSON.stringify({ name, email, subject, message, attachments: encodedAttachments }),
       });
 
       if (!res.ok) throw new Error('Failed to send');
@@ -49,12 +74,13 @@ export default function Support() {
       setEmail('');
       setSubject(SUBJECT_OPTIONS[0]);
       setMessage('');
+      setAttachments([]);
     } catch {
       setStatus('error');
     } finally {
       setSending(false);
     }
-  }, [name, email, subject, message]);
+  }, [name, email, subject, message, attachments]);
 
   const hasRequiredFields = name && email && message;
 
@@ -62,9 +88,9 @@ export default function Support() {
     <div className="flex min-h-screen bg-background">
       <AppSidebar activePage="support" />
 
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 min-w-0 overflow-y-auto overflow-x-hidden">
         {/* Header */}
-        <div className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border px-6 py-3">
+        <div className="sticky top-0 z-30 bg-background/80 backdrop-blur border-b border-border px-4 md:px-6 py-3">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <LifeBuoy size={18} className="text-primary" />
@@ -78,7 +104,7 @@ export default function Support() {
           </div>
         </div>
 
-        <div className="p-6 space-y-6 max-w-2xl mx-auto">
+        <div className="p-4 md:p-6 space-y-6 max-w-2xl mx-auto">
           <div>
             <SectionHeader icon={LifeBuoy} title="Contact Form" />
             <DashboardCard>
@@ -142,6 +168,52 @@ export default function Support() {
                     rows={5}
                     className="w-full px-3 py-2 rounded-lg bg-secondary border border-border text-sm font-mono outline-none focus:border-primary/50 transition resize-none"
                   />
+                </div>
+
+                {/* Attachments */}
+                <div>
+                  <label className="text-[10px] font-mono text-muted-foreground uppercase tracking-widest mb-1 block">
+                    Attachments <span className="text-muted-foreground/50">(optional, max 5 images)</span>
+                  </label>
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/*"
+                    multiple
+                    onChange={handleFileChange}
+                    className="hidden"
+                  />
+                  <button
+                    type="button"
+                    onClick={() => fileInputRef.current?.click()}
+                    disabled={attachments.length >= 5}
+                    className="flex items-center gap-1.5 px-3 py-2 rounded-lg bg-secondary border border-border text-sm font-mono text-muted-foreground hover:text-foreground hover:border-primary/50 transition disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    <Paperclip size={14} /> Attach Images
+                  </button>
+                  {attachments.length > 0 && (
+                    <div className="flex flex-wrap gap-2 mt-2">
+                      {attachments.map((file, i) => (
+                        <div key={i} className="relative group">
+                          <img
+                            src={URL.createObjectURL(file)}
+                            alt={file.name}
+                            className="w-16 h-16 object-cover rounded-lg border border-border"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => removeAttachment(i)}
+                            className="absolute -top-1.5 -right-1.5 w-5 h-5 rounded-full bg-destructive text-white flex items-center justify-center opacity-0 group-hover:opacity-100 transition"
+                          >
+                            <X size={10} />
+                          </button>
+                          <span className="block text-[8px] font-mono text-muted-foreground truncate w-16 mt-0.5">
+                            {file.name}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Status Messages */}
