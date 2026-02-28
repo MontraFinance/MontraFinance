@@ -128,7 +128,7 @@ export interface AgentContextType {
   registerAgentOnChain: (agentId: string) => Promise<{ erc8004AgentId: number; txHash: string }>;
   confirmAgentFunding: (agentId: string, txHash: string, amount: number) => Promise<void>;
   activateTrading: (agentId: string) => Promise<void>;
-  withdrawFromAgent: (agentId: string, amount: number) => Promise<string>;
+  withdrawFromAgent: (agentId: string, amount: number, token?: "USDC" | "MONTRA") => Promise<string>;
   addExchangeKey: (exchange: string, label: string, apiKey: string, secret: string, passphrase?: string, permissions?: string[]) => Promise<ExchangeKey>;
   deleteExchangeKey: (keyId: string) => Promise<void>;
   refreshExchangeKeys: () => Promise<void>;

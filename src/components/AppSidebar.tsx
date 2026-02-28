@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import {
   BarChart3, Bot, Wallet, Activity, Signal, MessageSquare, History, Menu, X,
-  Building2, Shield, KeyRound, Coins, DollarSign, Code2, Rocket,
+  Building2, Shield, KeyRound, Coins, DollarSign, Code2, Rocket, LifeBuoy, Search, FolderKanban,
 } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 
@@ -21,9 +21,12 @@ const NAV_ITEMS = [
   { icon: Code2, label: 'Dev Showcase', to: '/dev-showcase', disabled: false },
   { icon: History, label: 'Agent Orders', to: '/agents-history', disabled: false },
   { icon: Rocket, label: 'Launch Studio', to: '/launch-studio', disabled: false },
+  { icon: Search, label: 'Analyse Token', to: '/analyse-token', disabled: false },
+  { icon: FolderKanban, label: 'Manage Project', to: '/manage-project', disabled: false },
+  { icon: LifeBuoy, label: 'Support', to: '/support', disabled: false },
 ] as const;
 
-export type NavPage = 'dashboard' | 'agents' | 'portfolio' | 'transactions' | 'analytics' | 'institutional' | 'compliance' | 'smart-accounts' | 'messages' | 'tokens-analytics' | 'revenue' | 'dev-showcase' | 'agents-history' | 'launch-studio';
+export type NavPage = 'dashboard' | 'agents' | 'portfolio' | 'transactions' | 'analytics' | 'institutional' | 'compliance' | 'smart-accounts' | 'messages' | 'tokens-analytics' | 'revenue' | 'dev-showcase' | 'agents-history' | 'launch-studio' | 'analyse-token' | 'manage-project' | 'support';
 
 const PAGE_TO_PATH: Record<NavPage, string> = {
   dashboard: '/dashboard',
@@ -40,6 +43,9 @@ const PAGE_TO_PATH: Record<NavPage, string> = {
   'dev-showcase': '/dev-showcase',
   'agents-history': '/agents-history',
   'launch-studio': '/launch-studio',
+  'analyse-token': '/analyse-token',
+  'manage-project': '/manage-project',
+  support: '/support',
 };
 
 function NavLinks({ activePath, onNavigate, pingCount = 0 }: { activePath: string; onNavigate?: () => void; pingCount?: number }) {

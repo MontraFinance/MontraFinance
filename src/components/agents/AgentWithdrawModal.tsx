@@ -1,24 +1,61 @@
-import { useState } from 'react';
-import { ArrowUpRight, CheckCircle, ExternalLink, Loader2 } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { ArrowUpRight, CheckCircle, Coins, DollarSign, ExternalLink, Loader2 } from 'lucide-react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import type { Agent } from '@/types/agent';
 import { useAgents } from '@/contexts/AgentContext';
+import { useWallet } from '@/contexts/WalletContext';
+import { getMontraBalance } from '@/lib/usdc';
+
+type WithdrawToken = 'USDC' | 'MONTRA';
+
+const TOKEN_CONFIG: Record<WithdrawToken, { label: string; icon: typeof DollarSign; color: string }> = {
+  USDC: { label: 'USDC', icon: DollarSign, color: 'text-green-400' },
+  MONTRA: { label: 'MONTRA', icon: Coins, color: 'text-primary' },
+};
 
 const AgentWithdrawModal = ({ open, onClose, agent }: { open: boolean; onClose: () => void; agent: Agent }) => {
   const { withdrawFromAgent } = useAgents();
+  const { getProvider } = useWallet();
+  const [selectedToken, setSelectedToken] = useState<WithdrawToken>('USDC');
   const [amount, setAmount] = useState('');
   const [withdrawing, setWithdrawing] = useState(false);
   const [txHash, setTxHash] = useState('');
   const [error, setError] = useState('');
   const [done, setDone] = useState(false);
+  const [agentMontraBalance, setAgentMontraBalance] = useState<number | null>(null);
+  const [loadingBalance, setLoadingBalance] = useState(false);
 
-  const maxAmount = agent.wallet.remainingBudget;
+  const usdcMax = agent.wallet.remainingBudget;
+
+  // Fetch agent MONTRA balance when modal opens
+  useEffect(() => {
+    if (!open) return;
+    const agentAddr = agent.agentWalletAddress || agent.wallet.address;
+    if (!agentAddr) return;
+
+    setLoadingBalance(true);
+    const provider = getProvider();
+    if (!provider) {
+      setLoadingBalance(false);
+      return;
+    }
+
+    getMontraBalance(provider, agentAddr)
+      .then(bal => setAgentMontraBalance(bal))
+      .catch(() => setAgentMontraBalance(null))
+      .finally(() => setLoadingBalance(false));
+  }, [open, agent.agentWalletAddress, agent.wallet.address, getProvider]);
+
+  const maxAmount = selectedToken === 'USDC' ? usdcMax : (agentMontraBalance ?? 0);
 
   const handleWithdraw = async () => {
     const num = parseFloat(amount);
     if (isNaN(num) || num <= 0) return;
     if (num > maxAmount) {
-      setError(`Maximum withdrawable: $${maxAmount.toFixed(2)}`);
+      const label = selectedToken === 'USDC'
+        ? `$${maxAmount.toFixed(2)}`
+        : `${maxAmount.toFixed(0)} MONTRA`;
+      setError(`Maximum withdrawable: ${label}`);
       return;
     }
 
@@ -26,7 +63,7 @@ const AgentWithdrawModal = ({ open, onClose, agent }: { open: boolean; onClose: 
     setError('');
 
     try {
-      const hash = await withdrawFromAgent(agent.id, num);
+      const hash = await withdrawFromAgent(agent.id, num, selectedToken);
       setTxHash(hash);
       setDone(true);
       setTimeout(() => handleClose(), 5000);
@@ -38,11 +75,12 @@ const AgentWithdrawModal = ({ open, onClose, agent }: { open: boolean; onClose: 
   };
 
   const handleSetMax = () => {
-    setAmount(maxAmount.toFixed(2));
+    setAmount(selectedToken === 'USDC' ? maxAmount.toFixed(2) : maxAmount.toFixed(0));
   };
 
   const handleClose = () => {
     setAmount('');
+    setSelectedToken('USDC');
     setWithdrawing(false);
     setTxHash('');
     setError('');
@@ -53,6 +91,14 @@ const AgentWithdrawModal = ({ open, onClose, agent }: { open: boolean; onClose: 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) handleClose();
   };
+
+  const handleTokenSwitch = (token: WithdrawToken) => {
+    setSelectedToken(token);
+    setAmount('');
+    setError('');
+  };
+
+  const cfg = TOKEN_CONFIG[selectedToken];
 
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
@@ -69,7 +115,10 @@ const AgentWithdrawModal = ({ open, onClose, agent }: { open: boolean; onClose: 
             <CheckCircle size={32} className="text-primary mx-auto mb-3" />
             <p className="text-sm font-mono text-primary font-bold">Withdrawal Sent</p>
             <p className="text-[10px] font-mono text-muted-foreground mt-1">
-              ${parseFloat(amount).toFixed(2)} USDC sent to your wallet
+              {selectedToken === 'USDC'
+                ? `$${parseFloat(amount).toFixed(2)} USDC`
+                : `${parseFloat(amount).toFixed(0)} MONTRA`}{' '}
+              sent to your wallet
             </p>
             {txHash && (
               <a
@@ -84,14 +133,47 @@ const AgentWithdrawModal = ({ open, onClose, agent }: { open: boolean; onClose: 
           </div>
         ) : (
           <div className="space-y-4">
+            {/* Token selector */}
+            <div className="flex gap-2">
+              {(Object.keys(TOKEN_CONFIG) as WithdrawToken[]).map(token => {
+                const tc = TOKEN_CONFIG[token];
+                const Icon = tc.icon;
+                const isActive = selectedToken === token;
+                return (
+                  <button
+                    key={token}
+                    onClick={() => handleTokenSwitch(token)}
+                    className={`flex-1 flex items-center justify-center gap-1.5 rounded-lg border text-[11px] font-mono font-bold py-2 transition ${
+                      isActive
+                        ? 'border-primary bg-primary/10 text-primary'
+                        : 'border-border text-muted-foreground hover:border-muted-foreground/50'
+                    }`}
+                  >
+                    <Icon size={12} className={isActive ? tc.color : ''} />
+                    {tc.label}
+                  </button>
+                );
+              })}
+            </div>
+
             <div className="text-[10px] font-mono text-muted-foreground space-y-2">
               <div className="flex justify-between">
                 <span>Agent</span>
                 <span className="text-foreground">{agent.config.name}</span>
               </div>
               <div className="flex justify-between">
-                <span>Available Balance</span>
-                <span className="text-foreground">${maxAmount.toFixed(2)} USDC</span>
+                <span>Available {selectedToken}</span>
+                <span className="text-foreground">
+                  {selectedToken === 'USDC' ? (
+                    `$${usdcMax.toFixed(2)} USDC`
+                  ) : loadingBalance ? (
+                    'Loading...'
+                  ) : agentMontraBalance !== null ? (
+                    `${agentMontraBalance.toFixed(0)} MONTRA`
+                  ) : (
+                    '—'
+                  )}
+                </span>
               </div>
               <div className="flex justify-between">
                 <span>Agent Wallet</span>
@@ -103,7 +185,7 @@ const AgentWithdrawModal = ({ open, onClose, agent }: { open: boolean; onClose: 
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="text-[10px] font-mono text-muted-foreground">Amount (USDC)</label>
+                <label className="text-[10px] font-mono text-muted-foreground">Amount ({selectedToken})</label>
                 <button
                   onClick={handleSetMax}
                   className="text-[9px] font-mono text-primary hover:underline"
@@ -115,16 +197,18 @@ const AgentWithdrawModal = ({ open, onClose, agent }: { open: boolean; onClose: 
                 type="number"
                 value={amount}
                 onChange={e => setAmount(e.target.value)}
-                placeholder="0.00"
-                min="0.01"
+                placeholder={selectedToken === 'USDC' ? '0.00' : '500'}
+                min={selectedToken === 'USDC' ? '0.01' : '1'}
                 max={maxAmount}
-                step="0.01"
+                step={selectedToken === 'USDC' ? '0.01' : '1'}
                 className="w-full bg-transparent text-sm font-mono text-foreground outline-none border-b border-border focus:border-primary py-1.5 placeholder:text-muted-foreground/50"
               />
             </div>
 
             <p className="text-[10px] font-mono text-muted-foreground/70">
-              USDC will be sent from the agent's wallet to your connected wallet on Base.
+              {selectedToken === 'USDC'
+                ? "USDC will be sent from the agent's wallet to your connected wallet on Base."
+                : "MONTRA tokens will be sent from the agent's wallet to your connected wallet on Base."}
             </p>
 
             {error && (
@@ -139,7 +223,7 @@ const AgentWithdrawModal = ({ open, onClose, agent }: { open: boolean; onClose: 
               {withdrawing ? (
                 <><Loader2 size={14} className="animate-spin" /> WITHDRAWING...</>
               ) : (
-                <><ArrowUpRight size={14} /> WITHDRAW USDC</>
+                <><ArrowUpRight size={14} /> WITHDRAW {selectedToken}</>
               )}
             </button>
           </div>

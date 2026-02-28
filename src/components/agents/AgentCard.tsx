@@ -18,9 +18,36 @@ import GiveFeedbackModal from './GiveFeedbackModal';
 const BASE_RPC = "https://mainnet.base.org";
 const USDC_BASE = "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913";
 
-async function fetchOnChainBalances(address: string): Promise<{ usdc: number; eth: number }> {
+// Cached MONTRA token address (fetched once from burn estimate API)
+let _montraTokenAddr: string | null = null;
+let _montraDecimals = 18;
+
+async function getMontraAddr(): Promise<string | null> {
+  if (_montraTokenAddr) return _montraTokenAddr;
   try {
-    const [ethRes, usdcRes] = await Promise.all([
+    const res = await fetch("/api/burn/estimate", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ query: "test" }),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data.tokenAddress) {
+        _montraTokenAddr = data.tokenAddress;
+        _montraDecimals = data.tokenDecimals || 18;
+        return _montraTokenAddr;
+      }
+    }
+  } catch {}
+  return null;
+}
+
+async function fetchOnChainBalances(address: string): Promise<{ usdc: number; eth: number; montra: number }> {
+  try {
+    const balanceData = "0x70a08231" + address.toLowerCase().replace("0x", "").padStart(64, "0");
+    const montraAddr = await getMontraAddr();
+
+    const requests: Promise<any>[] = [
       fetch(BASE_RPC, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -31,17 +58,34 @@ async function fetchOnChainBalances(address: string): Promise<{ usdc: number; et
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           jsonrpc: "2.0", id: 2, method: "eth_call",
-          params: [{ to: USDC_BASE, data: "0x70a08231" + address.toLowerCase().replace("0x", "").padStart(64, "0") }, "latest"],
+          params: [{ to: USDC_BASE, data: balanceData }, "latest"],
         }),
       }).then(r => r.json()),
-    ]);
-    const ethWei = BigInt(ethRes.result || "0x0");
+    ];
+
+    if (montraAddr) {
+      requests.push(
+        fetch(BASE_RPC, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            jsonrpc: "2.0", id: 3, method: "eth_call",
+            params: [{ to: montraAddr, data: balanceData }, "latest"],
+          }),
+        }).then(r => r.json()),
+      );
+    }
+
+    const results = await Promise.all(requests);
+    const ethWei = BigInt(results[0].result || "0x0");
     const ethVal = Number(ethWei) / 1e18;
-    const usdcRaw = BigInt(usdcRes.result || "0x0");
+    const usdcRaw = BigInt(results[1].result || "0x0");
     const usdcVal = Number(usdcRaw) / 1e6;
-    return { usdc: usdcVal, eth: ethVal };
+    const montraRaw = results[2] ? BigInt(results[2].result || "0x0") : BigInt(0);
+    const montraVal = Number(montraRaw) / (10 ** _montraDecimals);
+    return { usdc: usdcVal, eth: ethVal, montra: montraVal };
   } catch {
-    return { usdc: -1, eth: -1 };
+    return { usdc: -1, eth: -1, montra: -1 };
   }
 }
 
@@ -71,7 +115,7 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
   const [registering, setRegistering] = useState(false);
   const [activatingTrading, setActivatingTrading] = useState(false);
   const [walletCopied, setWalletCopied] = useState(false);
-  const [onChainBalance, setOnChainBalance] = useState<{ usdc: number; eth: number } | null>(null);
+  const [onChainBalance, setOnChainBalance] = useState<{ usdc: number; eth: number; montra: number } | null>(null);
   const [cexPortfolio, setCexPortfolio] = useState<CexPortfolioData | null>(null);
   const [latestRec, setLatestRec] = useState<LatestAiRecommendation | null>(null);
   const [aiMetrics, setAiMetrics] = useState<AiMetrics | null>(null);
@@ -370,6 +414,14 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
                 </p>
               </div>
             )}
+            {!isMonitorMode && (
+              <div>
+                <p className="mb-1">TOTAL VALUE</p>
+                <p className={`text-sm font-bold ${stats.pnlUsd >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                  ${((walletBudget.remainingBudget > 0 ? walletBudget.remainingBudget : safeNum(agent.config?.budgetAmount)) + stats.pnlUsd).toFixed(2)}
+                </p>
+              </div>
+            )}
             {isCexAgent && !isMonitorMode && (
               <div>
                 <p className="mb-1">MAX TRADE</p>
@@ -556,7 +608,7 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
 
           {/* On-Chain Wallet Balance — only for non-CEX, non-monitor agents */}
           {!isCexAgent && !isMonitorMode && onChainBalance && onChainBalance.usdc >= 0 && (
-            <div className="flex items-center gap-3 mb-3 text-[10px] font-mono bg-secondary/30 rounded-lg px-3 py-2">
+            <div className="flex items-center gap-3 mb-3 text-[10px] font-mono bg-secondary/30 rounded-lg px-3 py-2 flex-wrap">
               <span className="text-muted-foreground">Wallet Balance:</span>
               <span className="text-foreground font-bold">${onChainBalance.usdc.toFixed(2)} USDC</span>
               <span className="text-muted-foreground">|</span>
@@ -565,6 +617,12 @@ const AgentCard = ({ agent }: { agent: Agent }) => {
               </span>
               {onChainBalance.eth < 0.0001 && (
                 <span className="text-[8px] text-yellow-500">(needs gas)</span>
+              )}
+              {onChainBalance.montra >= 0 && (
+                <>
+                  <span className="text-muted-foreground">|</span>
+                  <span className="text-primary font-bold">{onChainBalance.montra.toFixed(0)} MONTRA</span>
+                </>
               )}
             </div>
           )}
